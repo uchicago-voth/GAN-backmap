@@ -44,14 +44,34 @@ loss_file = open(c.output_dir + c.output_name + ".losses", "w")
 ########################
 
 
+dset = data.dataset_constructor(c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
+c.AA_NUM_ATOMS = dset.AA_NUM_ATOMS
+c.CG_NUM_ATOMS = dset.CG_NUM_ATOMS
+
+aa_data_loader = dset.construct_data_loader(dset.aa_trj, c.AA_NUM_ATOMS)
+cg_data_loader = dset.construct_data_loader(dset.cg_trj, c.CG_NUM_ATOMS)
+
+atom_counts = []
+if (os.path.exists(sys.argv[1] + ".cg")):
+    print("Atomistic-CG correspondance file located. Generating neighbor list and forward mapping operator based on file.")
+    atom_counts = dset.input_atom_counts(sys.argv[1] + ".cg")
+else:
+    print("No Atomistic-CG correspondance file located. Generating neighbor list and forward mapping operator based on single residue per bead mapping.")
+    print("This option only works properly for proteins. If your system is not a protein, this may break things.")
+    atom_counts = dset.res_atom_counts()
+
+G_f = dset.construct_forward_matrix(atom_counts, c.device)
+
+
+
 print("Constructing Dataset")
-aa_data_loader, cg_data_loader, aa_trj, cg_samples, c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, min_data, max_data = data.construct_dataset(
-        c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
+#aa_data_loader, cg_data_loader, aa_trj, cg_samples, c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, min_data, max_data = data.construct_dataset(
+#        c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
 
 
 
 print("Constructing Forward mapping matrix")
-G_f, atom_counts = data.forward_matrix(c.AA_NUM_ATOMS, c.CG_NUM_ATOMS, aa_trj, c.device)
+#G_f, atom_counts = data.forward_matrix(c.AA_NUM_ATOMS, c.CG_NUM_ATOMS, aa_trj, c.device)
 dist_size = feat.calc_dist_size(atom_counts) 
 
 
@@ -207,13 +227,16 @@ for epoch in range(c.NUM_EPOCHS):
 
 
 #generate LAMMPS trajectory file from generated samples for analysis
+coords = dset.cg_trj.xyz[0:c.output_size]
+normed_coords = dset.norm(coords)
+cg_samples = torch.from_numpy(normed_coords)
 verification_set = cg_samples[0:c.output_size,:,:].to(c.device)
 big_noise = torch.randn(c.output_size, c.Z_SIZE, device=c.device)
 #verification_data = torch.cat((big_noise, verification_set), dim=1)
 samps = netG(big_noise, verification_set).to(c.device).detach()
-samps = data.unnorm(samps.cpu(), min_data, max_data)
+samps = dset.unnorm(samps.cpu())
 
-trj2 = aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
+trj2 = dset.aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
 
 #Save stuff
 trj2.xyz = samps.numpy()
