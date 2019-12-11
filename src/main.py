@@ -44,6 +44,7 @@ loss_file = open(c.output_dir + c.output_name + ".losses", "w")
 ########################
 
 
+print("Constructing Dataset")
 dset = data.dataset_constructor(c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
 c.AA_NUM_ATOMS = dset.AA_NUM_ATOMS
 c.CG_NUM_ATOMS = dset.CG_NUM_ATOMS
@@ -60,11 +61,13 @@ else:
     print("This option only works properly for proteins. If your system is not a protein, this may break things.")
     atom_counts = dset.res_atom_counts()
 
+
+
+print("Constructing Forward Matrix")
 G_f = dset.construct_forward_matrix(atom_counts, c.device)
 
 
 
-print("Constructing Dataset")
 #aa_data_loader, cg_data_loader, aa_trj, cg_samples, c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, min_data, max_data = data.construct_dataset(
 #        c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
 

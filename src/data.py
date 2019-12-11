@@ -50,11 +50,11 @@ class dataset_constructor:
         return atom_counts
         
     def input_atom_counts(self, filename):
-        f = open(filename, "w")
+        f = open(filename, "r")
         atom_counts = []
         for i in f.readlines():
             atom_counts.append(int(i))
-        return input_atom_counts
+        return atom_counts
 
     
 
@@ -67,7 +67,9 @@ class dataset_constructor:
                 'P': 30.974,
                 'S': 32.065
          }
-        print(atom_counts)
+        
+        if len(atom_counts) != self.CG_NUM_ATOMS:
+            raise SystemExit('Error: CG correspondance file is inconsistent with number of CG sites')
         self.table["element"].replace(massdict, inplace=True)
         M = np.zeros((self.AA_NUM_ATOMS, self.CG_NUM_ATOMS))
         prev = 0
@@ -81,7 +83,6 @@ class dataset_constructor:
                 atom+=1
             prev=atom_counts[i]
         G_f = torch.from_numpy(M).type(torch.float).to(device)
-        print(G_f)
         return G_f
 
 
