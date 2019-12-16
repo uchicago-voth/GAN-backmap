@@ -36,7 +36,7 @@ class dataset_constructor:
         data_normalized = self.norm(coordinates)
         samples = torch.from_numpy(data_normalized)
         data = data_utils.TensorDataset(samples)
-        data_loader = data_utils.DataLoader(data, batch_size = self.BATCH_SIZE, shuffle=True)
+        data_loader = data_utils.DataLoader(data, batch_size = self.BATCH_SIZE, shuffle=True, drop_last=True)
         return data_loader
         
     def res_atom_counts(self):
