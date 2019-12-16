@@ -29,22 +29,6 @@ class Generator(nn.Module):
 
         self.main = nn.Sequential(*begin + middle + end)
 
-#        self.main = nn.Sequential(
-#                nn.Linear(Z_SIZE + (CG_NUM_ATOMS * NUM_DIMS),G_WIDTH, bias=False),
-#                nn.BatchNorm1d(G_WIDTH),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(G_WIDTH,G_WIDTH, bias=False),
-#                nn.BatchNorm1d(G_WIDTH),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(G_WIDTH,G_WIDTH, bias=False),
-#                nn.BatchNorm1d(G_WIDTH),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(G_WIDTH,G_WIDTH, bias=False),
-#                nn.BatchNorm1d(G_WIDTH),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(G_WIDTH, AA_NUM_ATOMS * NUM_DIMS, bias=False),
-#                nn.Tanh(),
-#        )
 #Network takes two inputs, one is a vector of random numbers of shape (z)
 #the second are the CG coordinates, shape (20,3)
     def forward(self, z, cg):
@@ -80,26 +64,6 @@ class Discriminator(nn.Module):
 
         self.main = nn.Sequential(*begin + middle + end)
 
-#        self.main = nn.Sequential(
-#                nn.Linear(dist_size, D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
-#                nn.LeakyReLU(0.2, inplace=True),
-#                nn.Linear(D_WIDTH, 1, bias=False),
-#                #nn.Sigmoid(),
-#        )
     def forward(self, aa):
         features = feat.make_distance_set(aa, self.atom_counts, self.BATCH_SIZE)
         return self.main(features)
