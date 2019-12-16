@@ -98,13 +98,13 @@ if prev_model_flag:
 else:
     #Generate new models
     #GENERATOR
-    netG = networks.Generator(c.ngpu, c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c.NUM_DIMS, c.G_WIDTH, c.Z_SIZE).to(c.device)
+    netG = networks.Generator(c.ngpu, c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c.NUM_DIMS, c.G_WIDTH, c.G_DEPTH, c.Z_SIZE).to(c.device)
     #if (device.type == 'cuda') and (ngpu > 1):
     #    netG = nn.DataParallel(netG, list(range(ngpu)))
     netG.apply(init.weights_init_G)
 
     #DISCRIMINATOR
-    netD = networks.Discriminator(c.ngpu, dist_size, c.D_WIDTH, atom_counts, c.BATCH_SIZE).to(c.device)
+    netD = networks.Discriminator(c.ngpu, dist_size, c.D_WIDTH, c.D_DEPTH, atom_counts, c.BATCH_SIZE).to(c.device)
     #if (device.type == 'cuda') and (ngpu > 1):
     #    netD = nn.DataParallel(netD, list(range(ngpu)))
     netD.apply(init.weights_init_D)

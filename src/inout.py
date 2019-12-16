@@ -44,6 +44,10 @@ def set_params(pair):
         c.cg_topology = str(pair[1])
     elif pair[0] == "aa_topology":
         c.aa_topology = str(pair[1])
+    elif pair[0] == "G_DEPTH":
+        c.G_DEPTH = int(pair[1])
+    elif pair[0] == "D_DEPTH":
+        c.D_DEPTH = int(pair[1])
     elif pair[0] == "device":
         if pair[1] == "cpu":
             c.device = torch.device('cpu')

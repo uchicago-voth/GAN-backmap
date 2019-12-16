@@ -23,6 +23,8 @@ AA_NUM_ATOMS = 1
 CG_NUM_ATOMS = 1
 NUM_DIMS = 3
 NEIGHBORS = 1
+G_DEPTH = 4
+D_DEPTH = 8
 
 #Dataset params
 device=torch.device('cpu')

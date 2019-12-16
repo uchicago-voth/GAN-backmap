@@ -52,7 +52,5 @@ to penalize configurations which do not re-map to their original mapped state, b
 
 ## 5. Current Limitations
 - Currently only center of mass mappings are accepted
-- Network depth is constant
--  
 
 
