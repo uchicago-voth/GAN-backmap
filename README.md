@@ -17,12 +17,30 @@ Using the method requires # things:
 - A fine grained trajectory and a mapped trajectory
 - An input file
 - A mapping correspondance file (Not necessary if you wish to backmap a protein at the residue level)
+
+
+
 ### Trajectories
 - The trajectories should correspond to each other, but in theory this is not necessary. A cyclical loss is imposed on the generator
 to penalize configurations which do not re-map to their original mapped state, but paired data will speed up training
 
 - Provide each trajectory, as well as topology files for each, in a separate directory named "data/" (this name can be changed in the input file if desired)
 - More sampling is always preferable to less, as the networks benefit from seing many examples of appropriate fine grained configurations
+
+
+### Input file
+- A training name must be specified. For this document "INPUTNAME" will be used as an example
+- provide all non default settings desired in a file named INPUTNAME.in
+- Options are listed below, defaults are in parentheses
+
+### Settings
+- NUM_EPOCHS (1000): Number of epochs in training
+
+- TOTAL_SAMPLES (1000): Number of samples in each trajectory
+
+- D_TRAIN_RATE (10): The Generator is only trained every D_TRAIN_RATE batches, to allow for the discriminator to estimate the wasserstein distance before the generator is trained
+
+- 
 
 ## 3. Examples
 ## 4. Dependencies
@@ -35,6 +53,6 @@ to penalize configurations which do not re-map to their original mapped state, b
 ## 5. Current Limitations
 - Currently only center of mass mappings are accepted
 - Network depth is constant
-- 
+-  
 
 
