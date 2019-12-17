@@ -40,7 +40,29 @@ to penalize configurations which do not re-map to their original mapped state, b
 
 - D_TRAIN_RATE (10): The Generator is only trained every D_TRAIN_RATE batches, to allow for the discriminator to estimate the wasserstein distance before the generator is trained
 
-- 
+- BATCH_SIZE (10): Number of samples that the networks train on at one time. Increasing this will speed up training (especially on GPUs) but will reduce regularization and generalization of the networks, often leading to poorer models
+
+- GLEARNING_RATE (0.00008): Learning rate of the generator
+
+- DLEARNING_RATE (0.00005): Learning rate of the discriminator
+
+- BETA1 (0,5): Exponential decay rate for first moment in ADAM optimizer
+
+- Z_SIZE (20): Size of random vector passed to the generator
+
+- G_WIDTH (50): Size of each layer in the generator
+
+- D_WIDTH (80): Size of each layer in the discriminator
+
+- G_DEPTH (4): Number of hidden layers of size G_WIDTH in generator (does not include input and output layers)
+
+- D_DEPTH (8): Number of hidden layers of size D_WIDTH in discriminator (does not include input or output layers)
+
+- CYCLE_LAMBDA (10.0): constant which weights the cyclical loss. Higher values cause training to emphasize cyclical accuracy more
+
+- GP_LAMBDA (10.0): constant which weights the gradient penalty loss (which allows the GAN to use the wasserstein metric properly)
+
+- NUM_DIMS (3): Number of spatial dimensions in the dataset
 
 ## 3. Examples
 ## 4. Dependencies
@@ -52,5 +74,6 @@ to penalize configurations which do not re-map to their original mapped state, b
 
 ## 5. Current Limitations
 - Currently only center of mass mappings are accepted
+- Only networks with fully connected layers are supported, custom NNs are not available yet
 
 
