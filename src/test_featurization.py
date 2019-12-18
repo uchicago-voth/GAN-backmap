@@ -43,6 +43,22 @@ def make_distance_set(coords, atom_counts, BATCH_SIZE):
         dists = torch.cat((dists, D), dim=1)
     return dists
 
+def batch_distance_set(coords, atom_counts, BATCH_SIZE, max, NUM_DIMS):
+    prev = 0
+    count = 0 
+    new_coords = torch.zeros((BATCH_SIZE, CG_NUM_ATOMS, max, NUM_DIMS))
+    for i in atom_counts:
+        coords_segment = coords[:,prev:i,:]
+        prev = i
+        new_coords[count,
+        
+
+
+
+
+    return 0
+
+
 
 #Constructs a feature set using off-diagonals. As commented earlier, this is slow and cumbersome
 def featurize(coords, neighbors):
