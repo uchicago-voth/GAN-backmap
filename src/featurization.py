@@ -33,9 +33,9 @@ def make_neigh_list(matrix, neighbors):
 #Featurization options, first is best
 
 #Construct a set of distance matrices based on the mapping of the system. This is decently efficient
-def make_distance_set(coords, atom_counts, BATCH_SIZE):
+def make_distance_set(coords, atom_counts, BATCH_SIZE, device):
     prev = 0
-    dists = torch.zeros((BATCH_SIZE, 0))
+    dists = torch.zeros((BATCH_SIZE, 0)).to(device)
     for i in atom_counts:
         coords_segment = coords[:,prev:i,:]
         prev=i

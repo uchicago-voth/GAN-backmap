@@ -39,11 +39,12 @@ class Generator(nn.Module):
 
 #DISCRIMINATOR
 class Discriminator(nn.Module):
-    def __init__(self, ngpu, dist_size, D_WIDTH, D_DEPTH,  atom_counts, BATCH_SIZE):
+    def __init__(self, ngpu, dist_size, D_WIDTH, D_DEPTH,  atom_counts, BATCH_SIZE, device):
         super(Discriminator, self).__init__()
         self.ngpu = ngpu
         self.atom_counts = atom_counts
         self.BATCH_SIZE = BATCH_SIZE
+        self.device = device
         
         begin = [
                 nn.Linear(dist_size, D_WIDTH, bias=False),
@@ -65,7 +66,7 @@ class Discriminator(nn.Module):
         self.main = nn.Sequential(*begin + middle + end)
 
     def forward(self, aa):
-        features = feat.make_distance_set(aa, self.atom_counts, self.BATCH_SIZE)
+        features = feat.make_distance_set(aa, self.atom_counts, self.BATCH_SIZE, self.device)
         return self.main(features)
 
 

@@ -104,7 +104,7 @@ else:
     netG.apply(init.weights_init_G)
 
     #DISCRIMINATOR
-    netD = networks.Discriminator(c.ngpu, dist_size, c.D_WIDTH, c.D_DEPTH, atom_counts, c.BATCH_SIZE).to(c.device)
+    netD = networks.Discriminator(c.ngpu, dist_size, c.D_WIDTH, c.D_DEPTH, atom_counts, c.BATCH_SIZE, c.device).to(c.device)
     #if (device.type == 'cuda') and (ngpu > 1):
     #    netD = nn.DataParallel(netD, list(range(ngpu)))
     netD.apply(init.weights_init_D)
