@@ -136,6 +136,7 @@ iters = 0
 
 print("Starting Training")
 for epoch in range(c.NUM_EPOCHS):
+    print("epoch: " + str(epoch))
     for i, samples in enumerate(zip(cg_data_loader, aa_data_loader), 0):
         
         #Get Data
@@ -209,7 +210,7 @@ for epoch in range(c.NUM_EPOCHS):
 
             loss_file.write('[%d/%d][%d/%d]\tLoss_D: %.8f\tLoss_G: %.8f\tCycle_loss: %.8f\tD(x): %.8f\tD(G(z)): %.8f / %.8f\n'
               % (epoch, c.NUM_EPOCHS, i, len(aa_data_loader), errD.item(), errG.item(), err_cycle, D_x, D_G_z1, D_G_z2))
-
+            loss_file.flush()
 
         if (i == 0):
             G_losses.append(errG.item())
