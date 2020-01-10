@@ -46,6 +46,8 @@ def set_params(pair):
         c.aa_topology = str(pair[1])
     elif pair[0] == "G_DEPTH":
         c.G_DEPTH = int(pair[1])
+    elif pair[0] == "model_output_freq":
+        c.model_output_freq = int(pair[1])
     elif pair[0] == "D_DEPTH":
         c.D_DEPTH = int(pair[1])
     elif pair[0] == "device":

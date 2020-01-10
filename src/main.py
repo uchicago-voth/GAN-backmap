@@ -216,7 +216,7 @@ for epoch in range(c.NUM_EPOCHS):
             G_losses.append(errG.item())
             D_losses.append(errD.item())
     
-    if (epoch % 100 == 0):
+    if (epoch % c.model_output_freq == 0):
         print('Saving model to ' + c.output_dir + ' at Epoch ' + str(epoch))
         torch.save(netD, c.output_dir + c.output_D_name)
         torch.save(netG, c.output_dir + c.output_G_name)

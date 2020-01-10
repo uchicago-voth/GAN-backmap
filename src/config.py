@@ -31,6 +31,8 @@ device=torch.device('cpu')
 ngpu = 0
 #device=torch.device('cuda:0')
 #ngpu = 1
+
+model_output_freq = 100
 dataset_dir = 'data/'
 cg_trajectory = 'CG.lammpstrj'
 aa_trajectory = 'AA.lammpstrj'
