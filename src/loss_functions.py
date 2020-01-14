@@ -31,18 +31,18 @@ def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, BATCH_SIZE, AA_NUM_AT
 #L1 norm
 
 #Cycle losses
-def forward_cycle_loss(l1loss, G_f, netG, aa, noise, CYCLE_LAMBDA):
+def forward_cycle_loss(norm_loss, G_f, netG, aa, noise, CYCLE_LAMBDA):
     cg = torch.matmul(torch.transpose(aa, 1, 2), G_f)
     cg = torch.transpose(cg, 1, 2).contiguous()
     cycled = netG(noise, cg)
-    return l1loss(cycled, aa) * CYCLE_LAMBDA
+    return norm_loss(cycled, aa) * CYCLE_LAMBDA
                 
                 
-def backward_cycle_loss(l1loss, G_f, netG, cg, noise, CYCLE_LAMBDA):
+def backward_cycle_loss(norm_loss, G_f, netG, cg, noise, CYCLE_LAMBDA):
     aa = netG(noise, cg)
     cycled = torch.matmul(torch.transpose(aa, 1, 2), G_f)
     cycled = torch.transpose(cycled, 1, 2).contiguous()
-    return l1loss(cycled, cg) * CYCLE_LAMBDA
+    return norm_loss(cycled, cg) * CYCLE_LAMBDA
 
 
 

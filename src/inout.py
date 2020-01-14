@@ -28,6 +28,8 @@ def set_params(pair):
         c.D_WIDTH = int(pair[1])
     elif pair[0] == "GP_LAMBDA":
         c.GP_LAMBDA = float(pair[1])
+    elif pair[0] == "NORM":
+        c.NORM = int(pair[1])
     elif pair[0] == "AA_NUM_ATOMS":
         c.AA_NUM_ATOMS = int(pair[1])
     elif pair[0] == "CG_NUM_ATOMS":

@@ -25,6 +25,7 @@ NUM_DIMS = 3
 NEIGHBORS = 1
 G_DEPTH = 4
 D_DEPTH = 8
+NORM = 1
 
 #Dataset params
 device=torch.device('cpu')

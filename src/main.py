@@ -127,7 +127,10 @@ print(netD)
 #labels
 real_label=1
 fake_label=-1
-l1loss = nn.L1Loss()
+norm_loss = nn.L1Loss()
+
+if c.NORM = 2:
+    norm_loss = nn.MSEloss()
 
 G_losses = []
 D_losses = []
@@ -190,7 +193,7 @@ for epoch in range(c.NUM_EPOCHS):
             #loss
             errG = loss.wasserstein_loss(output, label)
             
-            err_cycle = loss.forward_cycle_loss(l1loss, G_f, netG, aa_real, noise, c.CYCLE_LAMBDA) + loss.backward_cycle_loss(l1loss, G_f, netG, cg_real, noise, c.CYCLE_LAMBDA)
+            err_cycle = loss.forward_cycle_loss(norm_loss, G_f, netG, aa_real, noise, c.CYCLE_LAMBDA) + loss.backward_cycle_loss(norm_loss, G_f, netG, cg_real, noise, c.CYCLE_LAMBDA)
             errG_cycle = errG + err_cycle
             #gradients
             errG_cycle.backward()
