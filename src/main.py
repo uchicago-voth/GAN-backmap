@@ -130,7 +130,7 @@ fake_label=-1
 norm_loss = nn.L1Loss()
 
 if c.NORM = 2:
-    norm_loss = nn.MSEloss()
+    norm_loss = nn.MSELoss()
 
 G_losses = []
 D_losses = []
