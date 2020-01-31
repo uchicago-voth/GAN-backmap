@@ -45,7 +45,7 @@ loss_file = open(c.output_dir + c.output_name + ".losses", "w")
 
 
 print("Constructing Dataset")
-dset = data.dataset_constructor(c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
+dset = data.Dataset_Constructor(c.BATCH_SIZE, c.TOTAL_SAMPLES, c.dataset_dir, c.cg_trajectory, c.aa_trajectory, c.cg_topology, c.aa_topology)
 c.AA_NUM_ATOMS = dset.AA_NUM_ATOMS
 c.CG_NUM_ATOMS = dset.CG_NUM_ATOMS
 
@@ -234,7 +234,7 @@ for epoch in range(c.NUM_EPOCHS):
 
 
 #generate LAMMPS trajectory file from generated samples for analysis
-coords = dset.cg_trj.xyz[0:c.output_size]
+coords = dset.cg_trj[0:c.output_size]
 normed_coords = dset.norm(coords)
 cg_samples = torch.from_numpy(normed_coords)
 verification_set = cg_samples[0:c.output_size,:,:].to(c.device)
@@ -243,7 +243,9 @@ big_noise = torch.randn(c.output_size, c.Z_SIZE, device=c.device)
 samps = netG(big_noise, verification_set).to(c.device).detach()
 samps = dset.unnorm(samps.cpu())
 
-trj2 = dset.aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
+trj2 = md.load(c.dataset_dir + c.aa_trajectory, top = c.dataset_dir + c.aa_topology).atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size] 
+
+#trj2 = dset.aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
 
 #Save stuff
 trj2.xyz = samps.numpy()

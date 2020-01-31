@@ -4,6 +4,8 @@ import torch.utils.data as data_utils
 import pandas as pd
 import numpy as np
 import mdtraj as md
+import fileinput
+from abc import ABC, abstractmethod
 
 
 #Normalization functions
@@ -12,33 +14,62 @@ import mdtraj as md
 #def unnorm(array, minimum, maximum):
 #    return np.add(np.multiply(array/2+0.5, np.subtract(maximum, minimum)), minimum)
 
-
-class dataset_constructor:
-    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES, dataset_dir, cg_trajectory, aa_trajectory, cg_topology, aa_topology):
+#Abstract dataset constructor class, not to be created
+class _Dataset_Constructor(ABC):
+    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES):
         self.BATCH_SIZE = BATCH_SIZE
-        self.TOTAL_SAMPLES = TOTAL_SAMPLES  
-        self.aa_trj = md.load(dataset_dir + aa_trajectory, top=dataset_dir + aa_topology)
-        self.cg_trj = md.load(dataset_dir + cg_trajectory, top=dataset_dir + cg_topology)
-        self.AA_NUM_ATOMS = self.aa_trj.xyz.shape[1]
-        self.CG_NUM_ATOMS = self.cg_trj.xyz.shape[1]
-        self.min_data = self.aa_trj.xyz.min()
-        self.max_data = self.aa_trj.xyz.max()
-        self.table, self.bonds = self.aa_trj.top.to_dataframe()
+        self.TOTAL_SAMPLES = TOTAL_SAMPLES
+        self.AA_NUM_ATOMS = self.aa_trj.shape[1]
+        self.CG_NUM_ATOMS = self.cg_trj.shape[1]
+        self.min_1 = self.aa_trj[:,:,0].min()
+        self.min_2 = self.aa_trj[:,:,1].min()
+        self.min_3 = self.aa_trj[:,:,2].min()
+        self.max_1 = self.aa_trj[:,:,0].max()
+        self.max_2 = self.aa_trj[:,:,1].max()
+        self.max_3 = self.aa_trj[:,:,2].max()
+
+
     def norm(self, array):
-        return np.multiply(np.subtract(np.divide(np.subtract(array, self.min_data),np.subtract(self.max_data, self.min_data)), 0.5),2.0)
+        array[:,:,0] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,0], self.min_1),np.subtract(self.max_1, self.min_1)), 0.5),2.0)
+        array[:,:,1] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,1], self.min_2),np.subtract(self.max_2, self.min_2)), 0.5),2.0)
+        array[:,:,2] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,2], self.min_3),np.subtract(self.max_3, self.min_3)), 0.5),2.0)
+        return array
+        #return np.multiply(np.subtract(np.divide(np.subtract(array, self.min_data),np.subtract(self.max_data, self.min_data)), 0.5),2.0)
     
     def unnorm(self, array):
-        return np.add(np.multiply(array/2+0.5, np.subtract(self.max_data, self.min_data)), self.min_data)
-    
+        array[:,:,0] = np.add(np.multiply(array[:,:,0]/2+0.5, np.subtract(self.max_1, self.min_1)), self.min_1)
+        array[:,:,1] = np.add(np.multiply(array[:,:,1]/2+0.5, np.subtract(self.max_2, self.min_2)), self.min_2)
+        array[:,:,2] = np.add(np.multiply(array[:,:,2]/2+0.5, np.subtract(self.max_3, self.min_3)), self.min_3)
+        return array
+        #return np.add(np.multiply(array/2+0.5, np.subtract(self.max_data, self.min_data)), self.min_data)
+
 
     def construct_data_loader(self, trj, NUM_ATOMS):
-        coordinates = trj.atom_slice(range(NUM_ATOMS), inplace=True).xyz[0:self.TOTAL_SAMPLES]
+        coordinates = trj
+        #coordinates = trj.atom_slice(range(NUM_ATOMS), inplace=True).xyz[0:self.TOTAL_SAMPLES]
         data_normalized = self.norm(coordinates)
         samples = torch.from_numpy(data_normalized)
         data = data_utils.TensorDataset(samples)
         data_loader = data_utils.DataLoader(data, batch_size = self.BATCH_SIZE, shuffle=True, drop_last=True)
         return data_loader
-        
+
+    @abstractmethod
+    def forward_map(self):
+        pass
+
+
+
+
+#Cartesian dataset. Usable for direct cartesian coordinates, or distance matrices
+class Cart_Dataset_Constructor(_Dataset_Constructor):
+    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES, dataset_dir, cg_trajectory, aa_trajectory, cg_topology, aa_topology):
+        self.aa_trj = md.load(dataset_dir + aa_trajectory, top=dataset_dir + aa_topology).xyz
+        self.cg_trj = md.load(dataset_dir + cg_trajectory, top=dataset_dir + cg_topology).xyz 
+        self.table, self.bonds = self.aa_trj.top.to_dataframe()
+        super().__init__(BATCH_SIZE, TOTAL_SAMPLES)
+    
+
+
     def res_atom_counts(self):
         atom_counts = []
         atom=0
@@ -85,7 +116,24 @@ class dataset_constructor:
         G_f = torch.from_numpy(M).type(torch.float).to(device)
         return G_f
 
+    def forward_map(self, data, G_f):
+        return torch.matmul(torch.transpose(data, 1, 2), G_f)
 
+
+
+
+
+
+#Internal coord dataset constructor. Usable with .bad files (bonds angles and dihedrals). These are created with xyz_zmat_util.py
+class Internal_Dataset_Constructor(_Dataset_Constructor):
+    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES, dataset_dir, cg_zmat, aa_zmat):
+        self.aa_trj = np.genfromtxt(dataset_dir + aa_zmat, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_AXES, -1, 3)
+        self.cg_trj = np.genfromtxt(dataset_dir + cg_zmat, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_AXES, -1, 3)
+        super().__init__(BATCH_SIZE, TOTAL_SAMPLES)
+
+
+    def forward_map(self):
+        pass
 
 
 #Generate forward mapping matrix
