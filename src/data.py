@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import mdtraj as md
 import fileinput
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 #Normalization functions
@@ -53,9 +53,6 @@ class _Dataset_Constructor(ABC):
         data_loader = data_utils.DataLoader(data, batch_size = self.BATCH_SIZE, shuffle=True, drop_last=True)
         return data_loader
 
-    @abstractmethod
-    def forward_map(self):
-        pass
 
 
 
@@ -116,8 +113,6 @@ class Cart_Dataset_Constructor(_Dataset_Constructor):
         G_f = torch.from_numpy(M).type(torch.float).to(device)
         return G_f
 
-    def forward_map(self, data, G_f):
-        return torch.matmul(torch.transpose(data, 1, 2), G_f)
 
 
 
@@ -132,8 +127,6 @@ class Internal_Dataset_Constructor(_Dataset_Constructor):
         super().__init__(BATCH_SIZE, TOTAL_SAMPLES)
 
 
-    def forward_map(self):
-        pass
 
 
 #Generate forward mapping matrix
