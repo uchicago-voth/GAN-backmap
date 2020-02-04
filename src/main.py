@@ -104,7 +104,7 @@ else:
     netG.apply(init.weights_init_G)
 
     #DISCRIMINATOR
-    netD = networks.Discriminator(c.ngpu, dist_size, c.D_WIDTH, c.D_DEPTH, atom_counts, c.BATCH_SIZE, c.device).to(c.device)
+    netD = networks.Distance_Discriminator(c.ngpu, dist_size, c.D_WIDTH, c.D_DEPTH, atom_counts, c.BATCH_SIZE, c.device).to(c.device)
     #if (device.type == 'cuda') and (ngpu > 1):
     #    netD = nn.DataParallel(netD, list(range(ngpu)))
     netD.apply(init.weights_init_D)
@@ -143,13 +143,13 @@ for epoch in range(c.NUM_EPOCHS):
     for i, samples in enumerate(zip(cg_data_loader, aa_data_loader), 0):
         
         #Get Data
-        netD.zero_grad()
         cg_real = samples[0][0].float().to(c.device).view(c.BATCH_SIZE, c.CG_NUM_ATOMS, c.NUM_DIMS)
         aa_real = samples[1][0].float().to(c.device).view(c.BATCH_SIZE, c.AA_NUM_ATOMS, c.NUM_DIMS)
         b_size = aa_real.size(0)
         label = torch.full((b_size,), real_label, device=c.device)
         
 
+        netD.zero_grad()
         #Train with real
         #forward thru Disc
         output = netD(aa_real).view(-1)
