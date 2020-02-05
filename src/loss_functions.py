@@ -3,17 +3,17 @@ import torch.nn as nn
 
 
 # Gradient penalty loss
-def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, BATCH_SIZE, AA_NUM_ATOMS, CG_NUM_ATOMS, NUM_DIMS, GP_LAMBDA, device):
-    alpha = torch.rand(BATCH_SIZE, 1)
-    alpha = alpha.expand(BATCH_SIZE, int(aa_real.nelement()/BATCH_SIZE)).contiguous()
-    alpha = alpha.view(BATCH_SIZE, AA_NUM_ATOMS, NUM_DIMS)
-    alpha = alpha.to(device)
+def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, param):
+    alpha = torch.rand(param.BATCH_SIZE, 1)
+    alpha = alpha.expand(param.BATCH_SIZE, int(aa_real.nelement()/param.BATCH_SIZE)).contiguous()
+    alpha = alpha.view(param.BATCH_SIZE, param.AA_NUM_ATOMS, param.NUM_DIMS)
+    alpha = alpha.to(param.device)
 
 
-    aa_fake = aa_fake.view(BATCH_SIZE, AA_NUM_ATOMS, NUM_DIMS)
+    aa_fake = aa_fake.view(param.BATCH_SIZE, param.AA_NUM_ATOMS, param.NUM_DIMS)
 
     interpolates = alpha * aa_real.detach() + (1-alpha) * aa_fake.detach()
-    interpolates = interpolates.to(device)
+    interpolates = interpolates.to(param.device)
     interpolates.requires_grad_(True)
 
     disc_interpolates = netD(interpolates)
@@ -24,7 +24,7 @@ def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, BATCH_SIZE, AA_NUM_AT
 
 
     gradients = gradients.view(gradients.size(0), -1)
-    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * GP_LAMBDA
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * param.GP_LAMBDA
     return gradient_penalty
 
 

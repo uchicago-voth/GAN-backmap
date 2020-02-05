@@ -6,11 +6,11 @@ import sys
 import os
 sys.path.insert(0,'/home/loose/source/GAN-backmap/src/')
 
-import config as c
+#import config as c
 import initialization as init
 import featurization as feat
 import networks
-import inout as io
+import parameters as param
 import loss_functions as loss
 import data 
 
@@ -20,6 +20,8 @@ import data
 ############################
 #Read input files and parse#
 ############################
+
+c = param.config()
 
 try:
     os.mkdir(c.output_dir)
@@ -174,7 +176,7 @@ for epoch in range(c.NUM_EPOCHS):
         
 
         #Add real and fake gradients
-        gradient_penalty = loss.calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, c.BATCH_SIZE, c.AA_NUM_ATOMS, c.CG_NUM_ATOMS, c.NUM_DIMS, c.GP_LAMBDA, c.device)
+        gradient_penalty = loss.calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, c)
         gradient_penalty.backward()
         errD = errD_real + errD_fake
         
