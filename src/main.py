@@ -195,7 +195,7 @@ for epoch in range(c.NUM_EPOCHS):
             #loss
             errG = loss.wasserstein_loss(output, label)
             
-            err_cycle = loss.forward_cycle_loss(norm_loss, G_f, netG, aa_real, noise, c.CYCLE_LAMBDA) + loss.backward_cycle_loss(norm_loss, G_f, netG, cg_real, noise, c.CYCLE_LAMBDA)
+            err_cycle = loss.forward_cycle_loss(G_f, netG, aa_real, noise, c.CYCLE_LAMBDA) + loss.backward_cycle_loss(G_f, netG, cg_real, noise, c.CYCLE_LAMBDA)
             errG_cycle = errG + err_cycle
             #gradients
             errG_cycle.backward()

@@ -29,9 +29,9 @@ def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, param):
 
 
 #L1 norm
-
+norm_loss = nn.L1Loss()
 #Cycle losses
-def forward_cycle_loss(norm_loss, G_f, netG, aa, noise, CYCLE_LAMBDA):
+def forward_cycle_loss(G_f, netG, aa, noise, CYCLE_LAMBDA):
     cg = torch.matmul(torch.transpose(aa, 1, 2), G_f)
     cg = torch.transpose(cg, 1, 2).contiguous()
     cycled = netG(noise, cg)
@@ -45,6 +45,10 @@ def backward_cycle_loss(norm_loss, G_f, netG, cg, noise, CYCLE_LAMBDA):
     return norm_loss(cycled, cg) * CYCLE_LAMBDA
 
 
+def general_cycle_loss(net1, net2, data, noise, CYCLE_LAMBDA):
+    half_cycled = net1(noise, data) 
+    cycled = net2(noise, half_cycled)
+    return norm_loss(cycled, aa) * CYCLE_LAMBDA
 
 #Wasserstein loss
 def wasserstein_loss(output, label):

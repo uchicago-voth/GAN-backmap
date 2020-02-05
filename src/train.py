@@ -8,11 +8,11 @@ import networks
 
 
 class _Train(ABC):
-    def __init__(self, forward_gen, forward_dis, aa_data_loader, cg_data_loader, param):
+    def __init__(self, backward_gen, backward_dis, aa_data_loader, cg_data_loader, param):
         
 
-        self.f_gen = forward_gen
-        self.f_dis = forward_dis
+        self.b_gen = backward_gen
+        self.b_dis = backward_dis
         self.aa_data_loader = aa_data_loader
         self.cg_data_loader = cg_data_loader
         self.real_label = 1
@@ -57,27 +57,27 @@ class _Train(ABC):
         pass
 
 class Distance_Trainer(_Trainer):
-    def __init__(self, forward_gen, forward_dis, G_f,  aa_data_loader, cg_data_loader, param):
-        super().__init__(self, forward_gen, forward_dis, aa_data_loader, cg_data_loader, param):
+    def __init__(self, backward_gen, backward_dis, G_f,  aa_data_loader, cg_data_loader, param):
+        super().__init__(self, backward_gen, backward_dis, aa_data_loader, cg_data_loader, param):
         self.G_f = G_f
 
 
     def step(self, aa_real, cg_real, label, b_size, param): GP_LAMBDA, CYCLE_LAMBDA, G_TRAIN):
-        self.f_dis.zero_grad()
-        output = self.f_dis(aa_real).view(-1)
+        self.b_dis.zero_grad()
+        output = self.b_dis(aa_real).view(-1)
 
         errD_real = loss.wasserstein_loss(output, label)
         errD_real.backward()
         noise = torch.randn(b_size, self.Z_SIZE, device=self.device)
-        aa_fake = self.f_gen(noise, cg_real)
+        aa_fake = self.b_gen(noise, cg_real)
         label.fill_(fake_label)
-        output = self.f_dis(aa_fake.detach()).view(-1)
+        output = self.b_dis(aa_fake.detach()).view(-1)
 
-        errD_fake = loss.wasserstein_loss(output_label)
+        errD_fake = loss.wasserstein_loss(output, label)
         errD_fake.backward()
 
 
-        gradient_penalty = loss.calc_gradient_penalty(f_dis, aa_real, aa_fake, cg_real, param)
+        gradient_penalty = loss.calc_gradient_penalty(b_dis, aa_real, aa_fake, cg_real, param)
 
         gradient_penalty.backward()
         errD = errD_fake + errD_real
@@ -85,35 +85,136 @@ class Distance_Trainer(_Trainer):
         optimizerD.step()
         if G_TRAIN == 0:
 
-            self.f_gen.zero_grad()
+            self.b_gen.zero_grad()
             label.fill_(real_label)
-            output = self.f_dis(aa_fake)
-            errG = loss.wasserstein_loss(output_label)
+            output = self.b_dis(aa_fake)
+            errG = loss.wasserstein_loss(output, label)
             
             
-            err_cycle = self.calc_cycle_loss(self.G_f, self.f_gen, noise, param.CYCLE_LAMBDA)
+            err_cycle = self.calc_cycle_loss(self.G_f, self.b_gen, noise, param.CYCLE_LAMBDA)
             errG_cycle = errG + err_cycle
             errG_cycle.backward()
         
         return [errD, errG, err_cycle, gradient_penalty]
     
 
-    def calc_cycle_loss(self, G_f, f_gen, aa_real, noise, CYCLE_LAMBDA):
-        return loss.forward_cycle_loss(G_f, f_gen, aa_real, noise, CYCLE_LAMBDA) + loss.backward_cycle_loss(G_f, f_gen, cg_real, noise, CYCLE_LAMBDA)
+    def calc_cycle_loss(self, G_f, b_gen, aa_real, cg_real, noise, CYCLE_LAMBDA):
+        return loss.forward_cycle_loss(G_f, b_gen, aa_real, noise, CYCLE_LAMBDA) + loss.backward_cycle_loss(G_f, b_gen, cg_real, noise, CYCLE_LAMBDA)
 
-    def print_stats(self, errD, errG, err_cycle, gradient_penalty, epoch, NUM_EPOCHS, loss_file):
-
+    def print_stats(self, errors, epoch, NUM_EPOCHS, loss_file):
+        errD = errors[0]
+        errG = errors[1]
+        err_cycle = errors[2]
+        gradient_penalty = errors[3]
         loss_file.write('[%d/%d][%d/%d]\tLoss_D: %.8f\tLoss_G: %.8f\tCycle_loss: %.8f\tGradient penalty: %.8f'
             % (epoch, NUM_EPOCHS, i, len(self.aa_data_loader), errD.item(), errG.item(), err_cycle, gradient_penalty))
         loss_file.flush()
 
+    def save_model(self, epoch, param):
+        print('saving model to ' + param.output_dir + ' at Epoch ' + str(epoch))
+        torch.save(self.b_dis, param.output_dir + param.output_D_name)
+        torch.save(self.b_gen, param.output_dir + param.output_G_name)
+
 class Internal_Trainer(_Trainer):
-    def __init__(self, forward_gen, forward_dis, backward_gen, backward_dis, aa_data_loader, cg_data_loader, param):
-        super().__init__(self, forward_gen, forward_dis, aa_data_loader, cg_data_loader, param):
-        self.b_gen = backward_gen
-        self.b_dis = backward_dis
+    def __init__(self, backward_gen, backward_dis, forward_gen, forward_dis, aa_data_loader, cg_data_loader, param):
+        super().__init__(self, backward_gen, backward_dis, aa_data_loader, cg_data_loader, param):
+        self.f_gen = forward_gen
+        self.f_dis = forward_dis
     
-    def D_step()
+    def step(self, aa_real, cg_real, label, b_size, param):
+        self.b_dis.zero_grad()
+        sekf.f_dis.zero_grad()
+
+        aa_output = self.b_dis(aa_real).view(-1)
+        cg_output = self.f_dis(cg_real).view(-1)
+
+        err_b_dis_real = loss.wasserstein_loss(output, label)
+        err_f_dis_real = loss.wasserstein_loss(output, label)
+
+        err_b_dis_real.backward()
+        err_f_dis_real.backward()
+
+        noise = torch.randn(b_size, self.Z_SIZE, device=self.device)
+
+        aa_fake = self.b_gen(noise, cg_real)
+        cg_fake = self.f_gen(noise, aa_real)
+
+        label.fill_(fake_label)
+
+        aa_output = self.b_dis(aa_fake.detach()).view(-1)
+        cg_output = self.f_dis(cg_fake.detach()).view(-1)
+
+        err_b_dis_fake = loss.wasserstein_loss(output, label)
+        err_f_dis_fake = loss.wasserstein_loss(output, label)
+
+        err_b_dis_fake.backward()
+        err_f_dis_fake.backward()
+
+        b_gradient_penalty = loss.calc_gradient_penalty(b_dis, aa_real, aa_fake, cg_real, param)
+        f_gradient_penalty = loss.calc_gradient_penalty(f_dis, cg_real, cg_fake, aa_real, param)
+
+        b_gradient_penalty.backward()
+        f_gradient_penalty.backward()
+
+        err_b_dis = err_b_dis_fake + err_b_dis_real
+        err_f_dis = err_f_fis_fake + err_f_dis_real
+
+        optimizer_b_dis.step()
+        optimizer_f_dis.step()
 
 
-    def calc_cycle_loss(self, aa, cg)
+        if G_TRAIN == 0:
+
+            self.b_gen.zero_grad()
+            self.f_gen.zero_grad()
+        
+            label.fill_(real_label)
+
+            aa_output = self.b_dis(aa_fake)
+            cg_output = self.d_dis(cg_fake)
+  
+            err_b_gen = loss.wasserstein_loss(output, label)
+            err_f_gen = loss.wasserstein_loss(output, label)
+            
+            err_b_gen.backward()
+            err_f_gen.backward()
+
+            err_cycle = self.calc_cycle_loss(self.f_gen, self.b_gen, noise, param.CYCLE_LAMBDA)
+            err_cycle.backward()
+        
+        return [err_b_dis, err_b_gen, err_f_dis, err_b_dis, err_cycle, b_gradient_penalty, f_gradient_penalty]
+
+    def calc_cycle_loss(self, f_gen, b_gen, aa_real, cg_real, noise, CYCLE_LAMBDA):
+        return loss.general_cycle_loss(f_gen, b_gen, aa_real, noise, CYCLE_LAMBDA) + loss.general_cycle_loss(b_gen, f_gen, cg_real, noise, CYCLE_LAMBDA)
+
+
+
+    def print_stats(self, errors, epoch, NUM_EPOCHS, step, loss_file):
+        err_b_dis = errors[0]
+        err_b_gen = errors[1]
+        err_f_dis = errors[2]
+        err_f_gen = errors[3]
+        err_cycle = errors[4]
+        b_gradient_penalty = errors[5]
+        f_gradient_penalty = errors[6]
+        loss_file.write('[%d/%d][%d/%d]\tBackward D loss: %.5f\tBackward G Loss: %.5f\tForward D loss: %.5f\t Foward G loss: %.5f\tCycle_loss: %.5f\tback gradient penalty: %.5f\tforward gradient penalty: %.5f'
+                % (epoch, NUM_EPOCHS, step, len(self.aa_data_loader), err_b_dis.item(), err_b_gen.item(), 
+                err_f_dis.item(), err_f_gen.item(), err_cycle, b_gradient_penalty, f_gradient_penalty))
+        loss_file.flush()
+
+
+    def save_models():
+        print('saving model to ' + param.output_dir + ' at Epoch ' + str(epoch))
+        torch.save(self.b_dis, param.output_dir + param.output_D_name)
+        torch.save(self.b_gen, param.output_dir + param.output_G_name)
+        torch.save(self.f_dis, param.output_dir + 'forward_' +  param.output_D_name)
+        torch.save(self.f_gen, param.output_dir + 'forward_' +  param.output_G_name)
+ 
+
+
+
+
+
+
+
+
