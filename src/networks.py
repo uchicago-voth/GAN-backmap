@@ -3,7 +3,7 @@ import torch.nn as nn
 import featurization as feat
 #GENERATOR
 class Generator(nn.Module):
-    def __init__(self, input_size, output_size, param):NUM_DIMS, G_WIDTH, G_DEPTH, Z_SIZE):
+    def __init__(self, input_size, output_size, param)
         super(Generator, self).__init__()
         self.device = param.device
         self.ngpu = param.ngpu
@@ -12,8 +12,9 @@ class Generator(nn.Module):
         self.input_size = input_size
         self.WIDTH = param.G_WIDTH
         self.DEPTH = param.G_DEPTH
+        self.Z_SIZE = param.Z_SIZE
         begin = [
-                nn.Linear(Z_SIZE + (input_size * self.NUM_DIMS),self.WIDTH, bias=False),
+                nn.Linear(self.Z_SIZE + (input_size * self.NUM_DIMS),self.WIDTH, bias=False),
                 nn.BatchNorm1d(self.WIDTH),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
@@ -79,7 +80,7 @@ class Distance_Discriminator(nn.Module):
 
 
 class Internal_Discriminator(nn.Module):
-    def __init__(self, ngpu, input_size, param):
+    def __init__(self, input_size, param):
         super(Internal_Discriminator, self).__init__()
         self.ngpu = param.ngpu 
         self.BATCH_SIZE = param.BATCH_SIZE

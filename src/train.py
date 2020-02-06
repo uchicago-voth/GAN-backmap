@@ -26,12 +26,12 @@ class _Train(ABC):
             print("epoch: " + str(epoch))
             for i, samples in enumerate(zip(self.cg_data_loader, self.aa_data_loader), 0):
                 cg_real = samples[0][0].float.to(param.device).view(param.BATCH_SIZE, param.CG_NUM_ATOMS, param.NUM_DIMS)
-                aa_real = samples[0][0].float.to(self.device).view(param.BATCH_SIZE, param.AA_NUM_ATOMS, param.NUM_DIMS)
+                aa_real = samples[0][0].float.to(param.device).view(param.BATCH_SIZE, param.AA_NUM_ATOMS, param.NUM_DIMS)
                 b_size = aa_real.size()
-                label = torch.full((b_size,), real_label, device=param.device)
+                label = torch.full((b_size,), self.real_label, device=param.device)
                 
                 G_TRAIN = iters % param.D_TRAIN_RATE
-                errors = self.step(aa_real, cg_real, label, b_size, param) GP_LAMBDA, CYCLE_LAMBDA, G_TRAIN)
+                errors = self.step(aa_real, cg_real, label, b_size, param)
                 iters += 1
                 out_frequency = int(len(self.aa_data_loader)/5)
                 if i % out_frequency == 0:

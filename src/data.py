@@ -16,9 +16,9 @@ from abc import ABC
 
 #Abstract dataset constructor class, not to be created
 class _Dataset_Constructor(ABC):
-    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES):
-        self.BATCH_SIZE = BATCH_SIZE
-        self.TOTAL_SAMPLES = TOTAL_SAMPLES
+    def __init__(self, param):
+        self.BATCH_SIZE = param.BATCH_SIZE
+        self.TOTAL_SAMPLES = param.TOTAL_SAMPLES
         self.AA_NUM_ATOMS = self.aa_trj.shape[1]
         self.CG_NUM_ATOMS = self.cg_trj.shape[1]
         self.min_1 = self.aa_trj[:,:,0].min()
@@ -58,13 +58,15 @@ class _Dataset_Constructor(ABC):
 
 
 #Cartesian dataset. Usable for direct cartesian coordinates, or distance matrices
-class Cart_Dataset_Constructor(_Dataset_Constructor):
-    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES, dataset_dir, cg_trajectory, aa_trajectory, cg_topology, aa_topology):
-        self.aa_trj = md.load(dataset_dir + aa_trajectory, top=dataset_dir + aa_topology).xyz
-        self.cg_trj = md.load(dataset_dir + cg_trajectory, top=dataset_dir + cg_topology).xyz 
+class Cartesian_Dataset_Constructor(_Dataset_Constructor):
+    def __init__(self, param):
+        self.dataset_dir = param.dataset_dir
+        self.aa_trj = md.load(param.dataset_dir + param.aa_trajectory, top=param.dataset_dir + param.aa_topology).xyz
+        self.cg_trj = md.load(param.dataset_dir + param.cg_trajectory, top=param.dataset_dir + param.cg_topology).xyz 
         self.table, self.bonds = self.aa_trj.top.to_dataframe()
-        super().__init__(BATCH_SIZE, TOTAL_SAMPLES)
-    
+        super().__init__(param)
+
+
 
 
     def res_atom_counts(self):
@@ -121,9 +123,9 @@ class Cart_Dataset_Constructor(_Dataset_Constructor):
 
 #Internal coord dataset constructor. Usable with .bad files (bonds angles and dihedrals). These are created with xyz_zmat_util.py
 class Internal_Dataset_Constructor(_Dataset_Constructor):
-    def __init__(self, BATCH_SIZE, TOTAL_SAMPLES, dataset_dir, cg_zmat, aa_zmat):
-        self.aa_trj = np.genfromtxt(dataset_dir + aa_zmat, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_AXES, -1, 3)
-        self.cg_trj = np.genfromtxt(dataset_dir + cg_zmat, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_AXES, -1, 3)
+    def __init__(self, param):
+        self.aa_trj = np.genfromtxt(param.dataset_dir + param.aa_trajectory, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_SAMPLES, -1, 3)
+        self.cg_trj = np.genfromtxt(param.dataset_dir + param.cg_trajectory, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_SAMPLES, -1, 3)
         super().__init__(BATCH_SIZE, TOTAL_SAMPLES)
 
 
