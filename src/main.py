@@ -13,6 +13,7 @@ import networks
 import parameters as param
 import loss_functions as loss
 import data 
+import train
 
 
 
@@ -125,6 +126,19 @@ print(netD)
 ########################
 #####train networks#####
 ########################
+
+
+
+
+
+trainer = train.
+
+
+
+
+
+
+
 
 #labels
 real_label=1

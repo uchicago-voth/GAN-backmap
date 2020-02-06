@@ -3,29 +3,32 @@ import torch.nn as nn
 import featurization as feat
 #GENERATOR
 class Generator(nn.Module):
-    def __init__(self, ngpu, input_size, output_size, NUM_DIMS, G_WIDTH, G_DEPTH, Z_SIZE):
+    def __init__(self, input_size, output_size, param):NUM_DIMS, G_WIDTH, G_DEPTH, Z_SIZE):
         super(Generator, self).__init__()
-        self.ngpu = ngpu
-        self.NUM_DIMS = NUM_DIMS
+        self.device = param.device
+        self.ngpu = param.ngpu
+        self.NUM_DIMS = param.NUM_DIMS
         self.output_size = output_size
         self.input_size = input_size
+        self.WIDTH = param.G_WIDTH
+        self.DEPTH = param.G_DEPTH
         begin = [
-                nn.Linear(Z_SIZE + (input_size * NUM_DIMS),G_WIDTH, bias=False),
-                nn.BatchNorm1d(G_WIDTH),
+                nn.Linear(Z_SIZE + (input_size * self.NUM_DIMS),self.WIDTH, bias=False),
+                nn.BatchNorm1d(self.WIDTH),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
         linear = [
-                nn.Linear(G_WIDTH,G_WIDTH, bias=False),
-                nn.BatchNorm1d(G_WIDTH),
+                nn.Linear(self.WIDTH,self.WIDTH, bias=False),
+                nn.BatchNorm1d(self.WIDTH),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
         end = [
-                nn.Linear(G_WIDTH, output_size* NUM_DIMS, bias=False),
+                nn.Linear(self.WIDTH, output_size* self.NUM_DIMS, bias=False),
                 nn.Tanh()
                 ]
 
         middle = []
-        [middle.extend(linear) for i in range(G_DEPTH)]
+        [middle.extend(linear) for i in range(self.DEPTH)]
 
         self.main = nn.Sequential(*begin + middle + end)
 
@@ -41,29 +44,32 @@ class Generator(nn.Module):
 
 
 class Distance_Discriminator(nn.Module):
-    def __init__(self, ngpu, input_size, D_WIDTH, D_DEPTH,  atom_counts, BATCH_SIZE, device):
+    def __init__(self, input_size, atom_counts, param):
         super(Distance_Discriminator, self).__init__()
-        self.ngpu = ngpu
+        self.ngpu = param.ngpu
         self.atom_counts = atom_counts
-        self.BATCH_SIZE = BATCH_SIZE
-        self.device = device
-        
+        self.BATCH_SIZE = param.BATCH_SIZE
+        self.device = param.device
+        self.input_size = input_size
+        self.WIDTH = param.D_WIDTH
+        self.DEPTH = param.D_DEPTH
+
         begin = [
-                nn.Linear(input_size, D_WIDTH, bias=False),
+                nn.Linear(self.input_size, self.WIDTH, bias=False),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
 
         layer = [
-                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
+                nn.Linear(self.WIDTH,self.WIDTH, bias=False),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
 
         end = [
-                nn.Linear(D_WIDTH, 1, bias=False)
+                nn.Linear(self.WIDTH, 1, bias=False)
                 ]
 
         middle = []
-        [middle.extend(layer) for i in range(D_DEPTH)]
+        [middle.extend(layer) for i in range(self.DEPTH)]
 
         self.main = nn.Sequential(*begin + middle + end)
 
@@ -73,20 +79,22 @@ class Distance_Discriminator(nn.Module):
 
 
 class Internal_Discriminator(nn.Module):
-    def __init__(self, ngpu, input_size, D_WIDTH, D_DEPTH,  atom_counts, BATCH_SIZE, device):
+    def __init__(self, ngpu, input_size, param):
         super(Internal_Discriminator, self).__init__()
-        self.ngpu = ngpu
-        self.atom_counts = atom_counts
-        self.BATCH_SIZE = BATCH_SIZE
-        self.device = device
+        self.ngpu = param.ngpu 
+        self.BATCH_SIZE = param.BATCH_SIZE
+        self.device = param.device
+        self.input_size = input_size
+        self.WIDTH = param.D_WIDTH
+        self.DEPTH = param.D_DEPTH
         
         begin = [
-                nn.Linear(input_size, D_WIDTH, bias=False),
+                nn.Linear(input_size, self.WIDTH, bias=False),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
 
         layer = [
-                nn.Linear(D_WIDTH,D_WIDTH, bias=False),
+                nn.Linear(self.WIDTH,self.WIDTH, bias=False),
                 nn.LeakyReLU(0.2, inplace=True)
                 ]
 
@@ -99,5 +107,5 @@ class Internal_Discriminator(nn.Module):
 
         self.main = nn.Sequential(*begin + middle + end)
 
-    def forward(self, aa):
-        return self.main(features)
+    def forward(self, data):
+        return self.main(data)

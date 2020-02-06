@@ -88,7 +88,9 @@ class config():
         self.G_DEPTH = 4
         self.D_DEPTH = 8
         self.NORM = 1
-       
+        self.mode = 0
+
+
         #Dataset params
         self.device=torch.device('cpu')
         self.ngpu = 0
@@ -168,7 +170,11 @@ class config():
             elif pair[1] == "gpu":
                 self.device = torch.device('cuda:0')
                 self.ngpu = 1
-
+        elif pair[0] == "mode":
+            if pair[1] == "distance":
+                self.mode = 0
+            elif pair[1] == "internal":
+                self.mode = 1
 
 
  
