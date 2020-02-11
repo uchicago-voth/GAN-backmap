@@ -3,7 +3,7 @@ import torch.nn as nn
 import featurization as feat
 #GENERATOR
 class Generator(nn.Module):
-    def __init__(self, input_size, output_size, param)
+    def __init__(self, input_size, output_size, param):
         super(Generator, self).__init__()
         self.device = param.device
         self.ngpu = param.ngpu

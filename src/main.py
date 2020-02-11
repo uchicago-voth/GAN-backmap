@@ -4,6 +4,8 @@ import torch.optim as optim
 import numpy as np
 import sys
 import os
+import mdtraj as md
+
 sys.path.insert(0,'/home/loose/source/GAN-backmap/src/')
 
 #import config as c
@@ -34,7 +36,7 @@ else:
 print("Checking for input file")
 if (os.path.exists(sys.argv[1] + ".in")):
     print("Input file found.")
-    io.read_input_file(sys.argv[1] + ".in")
+    c.read_input_file(sys.argv[1] + ".in")
 
 print("Device:")
 print(c.device)
@@ -87,7 +89,7 @@ prev_model_flag = False
 if len(sys.argv) >= 3:
     prev_model_flag = True
 
-if mode == 0:
+if c.mode == 0:
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
@@ -113,7 +115,7 @@ if mode == 0:
     print(b_gen)
     print(b_dis)
 
-    trainer = train.Distance_Trainer(b_gen, b_dis, G_f, aa_data_loader, cg_data_loader, c)    
+    trainer = train.Distance_Trainer(b_gen, b_dis, optimizerD, optimizerG, G_f, aa_data_loader, cg_data_loader, c)    
 
 
 elif mode == 1:
@@ -158,11 +160,10 @@ elif mode == 1:
     print(f_dis)
     print(f_gen)
 
-    trainer = train.Internal_Trainer(b_gen, b_dis, f_gen, f_dis, aa_data_loader, cg_data_loader, c)    
+    trainer = train.Internal_Trainer(b_gen, b_dis, optimizer_b_gen, optimizer_b_dis, f_gen, f_dis, optimizer_f_gen, optimizer_f_dis, aa_data_loader, cg_data_loader, c)    
 ########################
 #####train networks#####
 ########################
-
 
 print("Beginning Training")
 
@@ -284,7 +285,7 @@ trainer.train(loss_file, c)
 
 
 
-
+print(c.output_size)
 #generate LAMMPS trajectory file from generated samples for analysis
 coords = dset.cg_trj[0:c.output_size]
 normed_coords = dset.norm(coords)
@@ -302,8 +303,11 @@ trj2 = md.load(c.dataset_dir + c.aa_trajectory, top = c.dataset_dir + c.aa_topol
 #Save stuff
 trj2.xyz = samps.numpy()
 trj2.save_lammpstrj(c.output_dir + c.output_traj_name)
-torch.save(netD, c.output_dir + c.output_D_name)
-torch.save(netG, c.output_dir + c.output_G_name)
+
+trainer.save_models('end', c)
+
+#torch.save(netD, c.output_dir + c.output_D_name)
+#torch.save(netG, c.output_dir + c.output_G_name)
 
 #losses = open(output_dir + output_loss_name, "w")
 #G_loss_array = np.asarray(G_losses)

@@ -61,9 +61,11 @@ class _Dataset_Constructor(ABC):
 class Cartesian_Dataset_Constructor(_Dataset_Constructor):
     def __init__(self, param):
         self.dataset_dir = param.dataset_dir
-        self.aa_trj = md.load(param.dataset_dir + param.aa_trajectory, top=param.dataset_dir + param.aa_topology).xyz
-        self.cg_trj = md.load(param.dataset_dir + param.cg_trajectory, top=param.dataset_dir + param.cg_topology).xyz 
+        self.aa_trj = md.load(param.dataset_dir + param.aa_trajectory, top=param.dataset_dir + param.aa_topology)
+        self.cg_trj = md.load(param.dataset_dir + param.cg_trajectory, top=param.dataset_dir + param.cg_topology) 
         self.table, self.bonds = self.aa_trj.top.to_dataframe()
+        self.aa_trj = self.aa_trj.xyz[0:param.TOTAL_SAMPLES]
+        self.cg_trj = self.cg_trj.xyz[0:param.TOTAL_SAMPLES]
         super().__init__(param)
 
 

@@ -19,7 +19,7 @@ def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, param):
     disc_interpolates = netD(interpolates)
 
     gradients = torch.autograd.grad(outputs=disc_interpolates, inputs = interpolates,
-            grad_outputs=torch.ones(disc_interpolates.size()).to(device),
+            grad_outputs=torch.ones(disc_interpolates.size()).to(param.device),
             create_graph=True, retain_graph=True, only_inputs=True)[0]
 
 
@@ -38,7 +38,7 @@ def forward_cycle_loss(G_f, netG, aa, noise, CYCLE_LAMBDA):
     return norm_loss(cycled, aa) * CYCLE_LAMBDA
                 
                 
-def backward_cycle_loss(norm_loss, G_f, netG, cg, noise, CYCLE_LAMBDA):
+def backward_cycle_loss(G_f, netG, cg, noise, CYCLE_LAMBDA):
     aa = netG(noise, cg)
     cycled = torch.matmul(torch.transpose(aa, 1, 2), G_f)
     cycled = torch.transpose(cycled, 1, 2).contiguous()

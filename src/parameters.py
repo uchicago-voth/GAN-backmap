@@ -66,7 +66,7 @@ import config as c
 #    for line in input_file:
 #        set_params(line.split())
 class config():
-    def __init__():
+    def __init__(self):
         #Training Params
         self.BATCH_SIZE = 10
         self.NUM_EPOCHS = 1000
@@ -106,11 +106,11 @@ class config():
         self.output_size = 100
         self.output_base = 'wgan_gp_outputs/'
         self.output_name = sys.argv[1]
-        self.output_dir = output_base + output_name + '/'
-        self.output_traj_name = output_name + '.lammpstrj'
-        self.output_D_name = output_name + '_D.pth'
-        self.output_G_name = output_name + '_G.pth'
-        self.output_loss_name = output_name + "_losses.dat"
+        self.output_dir = self.output_base + self.output_name + '/'
+        self.output_traj_name = self.output_name + '.lammpstrj'
+        self.output_D_name = self.output_name + '_D.pth'
+        self.output_G_name = self.output_name + '_G.pth'
+        self.output_loss_name = self.output_name + "_losses.dat"
     
     
     
@@ -161,6 +161,8 @@ class config():
             self.G_DEPTH = int(pair[1])
         elif pair[0] == "model_output_freq":
             self.model_output_freq = int(pair[1])
+        elif pair[0] == "output_size":
+            self.output_size = int(pair[1])
         elif pair[0] == "D_DEPTH":
             self.D_DEPTH = int(pair[1])
         elif pair[0] == "device":
@@ -182,4 +184,4 @@ class config():
         print("Reading input file")
         input_file = open(name, "r")
         for line in input_file:
-            set_params(line.split())
+            self.set_params(line.split())
