@@ -5,16 +5,24 @@ import numpy as np
 import sys
 
 def to_zmat(name, num_frames, num_atoms):
+    num_frames = int(num_frames)
+    num_atoms = int(num_atoms)
     infile = name + '.xyz'
     outfile = name + '.bad'
     topfile = name + '.zmat'
-    traj = cc.Cartesian.read_xyz(infile)
+    traj = cc.Cartesian.read_xyz(infile, get_bonds=False)
+    print("loaded")
     t = time.time()
     open(outfile, 'w').close()
     out_f = open(outfile, "ab")
     construction_table = 0
     for i in range(num_frames):
+        if i % 500 == 0:
+            print("Frame " + str(i))
+        #frame = cc.Cartesian.read_xyz(infile, start_index=1, nrows = num_atoms)
+        #print(frame)
         frame = traj.iloc[(num_atoms+1) * i : ((num_atoms+1) * i) + num_atoms]
+        frame.get_bonds()
         frame.index = range(num_atoms)
         if i == 0:
             construction_table = frame.get_construction_table()
@@ -33,6 +41,8 @@ def to_zmat(name, num_frames, num_atoms):
 
 
 def to_xyz(name, num_frames, num_atoms):
+    num_frames = int(num_frames)
+    num_atoms = int(num_atoms)
     infile = name + '.bad'
     outfile = name + '_gen.xyz'
     topfile = name + '.zmat'
@@ -42,6 +52,8 @@ def to_xyz(name, num_frames, num_atoms):
     t = time.time()
     z_features = np.genfromtxt(infile, delimiter=',')
     for i in range(num_frames):
+        if i % 500 == 0:
+            print("Frame " + str(i))
         z_feat_frame = z_features[i*num_atoms:(i+1)*num_atoms,:]
         z_mat = top
         z_mat.unsafe_iloc[:,2] = z_feat_frame[:,0]
