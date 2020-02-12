@@ -3,6 +3,7 @@ import fileinput
 import time
 import numpy as np
 import sys
+import os.path as path
 
 def to_zmat(name, num_frames, num_atoms):
     num_frames = int(num_frames)
@@ -25,14 +26,20 @@ def to_zmat(name, num_frames, num_atoms):
         frame.get_bonds()
         frame.index = range(num_atoms)
         if i == 0:
-            construction_table = frame.get_construction_table()
+            if path.exists(topfile):
+                print('Reading previously generated construction table')
+                top = cc.Zmat.read_zmat(topfile, implicit_index=False)
+                construction_table = top.get_cartesian().get_construction_table()
+            else:
+                construction_table = frame.get_construction_table()
         z_frame = frame.get_zmat(construction_table)
         #sorted_dataframe = z_frame.sort_index()
         #z_frame.unsafe_iloc[:,:] = sorted_dataframe.to_numpy()[:,:]
         #print(z_frame)
         if i == 0:
-            top = z_frame
-            top.to_zmat(topfile, implicit_index=False)
+            if not path.exists(topfile):
+                top = z_frame
+                top.to_zmat(topfile, implicit_index=False)
         z_frame = z_frame.iloc[:,[2,4,6]]
         np.savetxt(out_f, z_frame.to_numpy(),fmt='%.6f', delimiter=',')
     t_2 = time.time()
