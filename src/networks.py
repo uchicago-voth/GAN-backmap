@@ -100,13 +100,14 @@ class Internal_Discriminator(nn.Module):
                 ]
 
         end = [
-                nn.Linear(D_WIDTH, 1, bias=False)
+                nn.Linear(self.WIDTH, 1, bias=False)
                 ]
 
         middle = []
-        [middle.extend(layer) for i in range(D_DEPTH)]
+        [middle.extend(layer) for i in range(self.DEPTH)]
 
         self.main = nn.Sequential(*begin + middle + end)
 
     def forward(self, data):
+        data = data.view(self.BATCH_SIZE, self.input_size)
         return self.main(data)

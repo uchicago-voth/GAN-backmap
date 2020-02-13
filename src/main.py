@@ -118,7 +118,7 @@ if c.mode == 0:
     trainer = train.Distance_Trainer(b_gen, b_dis, optimizerD, optimizerG, G_f, aa_data_loader, cg_data_loader, c)    
 
 
-elif mode == 1:
+elif c.mode == 1:
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
@@ -138,11 +138,11 @@ elif mode == 1:
         f_gen.apply(init.weights_init_G)
     
         #DISCRIMINATOR
-        b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS, c).to(c.device)
+        b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
         b_dis.apply(init.weights_init_D)
 
 
-        f_dis = networks.Internal_Discriminator(c.CG_NUM_ATOMS, c).to(c.device)
+        f_dis = networks.Internal_Discriminator(c.CG_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
         f_dis.apply(init.weights_init_D)
     
     
@@ -285,25 +285,28 @@ trainer.train(loss_file, c)
 
 
 
-print(c.output_size)
 #generate LAMMPS trajectory file from generated samples for analysis
 coords = dset.cg_trj[0:c.output_size]
 normed_coords = dset.norm(coords)
-cg_samples = torch.from_numpy(normed_coords)
+cg_samples = torch.from_numpy(normed_coords).float()
 verification_set = cg_samples[0:c.output_size,:,:].to(c.device)
 big_noise = torch.randn(c.output_size, c.Z_SIZE, device=c.device)
 #verification_data = torch.cat((big_noise, verification_set), dim=1)
 samps = b_gen(big_noise, verification_set).to(c.device).detach()
 samps = dset.unnorm(samps.cpu())
 
-trj2 = md.load(c.dataset_dir + c.aa_trajectory, top = c.dataset_dir + c.aa_topology).atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size] 
 
-#trj2 = dset.aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
-
-#Save stuff
-trj2.xyz = samps.numpy()
-trj2.save_lammpstrj(c.output_dir + c.output_traj_name)
-
+if c.mode == 0:
+    trj2 = md.load(c.dataset_dir + c.aa_trajectory, top = c.dataset_dir + c.aa_topology).atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size] 
+    
+    #trj2 = dset.aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
+    
+    #Save stuff
+    trj2.xyz = samps.numpy()
+    trj2.save_lammpstrj(c.output_dir + c.output_traj_name)
+elif c.mode == 1:
+    samps = samps.numpy().reshape(-1, 3)
+    np.savetxt(c.output_dir + c.output_name + '.bad', samps, fmt= '%.6f', delimiter=',')
 trainer.save_models('end', c)
 
 #torch.save(netD, c.output_dir + c.output_D_name)

@@ -19,8 +19,8 @@ class _Dataset_Constructor(ABC):
     def __init__(self, param):
         self.BATCH_SIZE = param.BATCH_SIZE
         self.TOTAL_SAMPLES = param.TOTAL_SAMPLES
-        self.AA_NUM_ATOMS = self.aa_trj.shape[1]
-        self.CG_NUM_ATOMS = self.cg_trj.shape[1]
+        self.AA_NUM_ATOMS = param.AA_NUM_ATOMS #self.aa_trj.shape[1]
+        self.CG_NUM_ATOMS = param.CG_NUM_ATOMS #self.cg_trj.shape[1]
         self.min_1 = self.aa_trj[:,:,0].min()
         self.min_2 = self.aa_trj[:,:,1].min()
         self.min_3 = self.aa_trj[:,:,2].min()
@@ -126,9 +126,16 @@ class Cartesian_Dataset_Constructor(_Dataset_Constructor):
 #Internal coord dataset constructor. Usable with .bad files (bonds angles and dihedrals). These are created with xyz_zmat_util.py
 class Internal_Dataset_Constructor(_Dataset_Constructor):
     def __init__(self, param):
-        self.aa_trj = np.genfromtxt(param.dataset_dir + param.aa_trajectory, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_SAMPLES, -1, 3)
-        self.cg_trj = np.genfromtxt(param.dataset_dir + param.cg_trajectory, delimiter=',').swapaxes(0,1).reshape(self.TOTAL_SAMPLES, -1, 3)
-        super().__init__(BATCH_SIZE, TOTAL_SAMPLES)
+        self.aa_trj = np.genfromtxt(param.dataset_dir + param.aa_trajectory, delimiter=',')
+        self.aa_trj = self.aa_trj.reshape(-1, param.AA_NUM_ATOMS, 3)
+        self.aa_trj = self.aa_trj[0:param.TOTAL_SAMPLES, :, :]
+     
+        
+        self.cg_trj = np.genfromtxt(param.dataset_dir + param.cg_trajectory, delimiter=',')
+        self.cg_trj = self.cg_trj.reshape(-1, param.CG_NUM_ATOMS, 3)
+        self.cg_trj = self.cg_trj[0:param.TOTAL_SAMPLES, :, :]
+       
+        super().__init__(param)
 
 
 

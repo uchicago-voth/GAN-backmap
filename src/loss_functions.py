@@ -3,14 +3,14 @@ import torch.nn as nn
 
 
 # Gradient penalty loss
-def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, param):
+def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, NUM_ATOMS, param):
     alpha = torch.rand(param.BATCH_SIZE, 1)
     alpha = alpha.expand(param.BATCH_SIZE, int(aa_real.nelement()/param.BATCH_SIZE)).contiguous()
-    alpha = alpha.view(param.BATCH_SIZE, param.AA_NUM_ATOMS, param.NUM_DIMS)
+    alpha = alpha.view(param.BATCH_SIZE, NUM_ATOMS, param.NUM_DIMS)
     alpha = alpha.to(param.device)
 
 
-    aa_fake = aa_fake.view(param.BATCH_SIZE, param.AA_NUM_ATOMS, param.NUM_DIMS)
+    aa_fake = aa_fake.view(param.BATCH_SIZE, NUM_ATOMS, param.NUM_DIMS)
 
     interpolates = alpha * aa_real.detach() + (1-alpha) * aa_fake.detach()
     interpolates = interpolates.to(param.device)
@@ -48,7 +48,7 @@ def backward_cycle_loss(G_f, netG, cg, noise, CYCLE_LAMBDA):
 def general_cycle_loss(net1, net2, data, noise, CYCLE_LAMBDA):
     half_cycled = net1(noise, data) 
     cycled = net2(noise, half_cycled)
-    return norm_loss(cycled, aa) * CYCLE_LAMBDA
+    return norm_loss(cycled, data) * CYCLE_LAMBDA
 
 #Wasserstein loss
 def wasserstein_loss(output, label):
