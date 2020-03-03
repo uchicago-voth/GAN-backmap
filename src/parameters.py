@@ -177,7 +177,8 @@ class config():
                 self.mode = 0
             elif pair[1] == "internal":
                 self.mode = 1
-
+            elif pair[1] == "internal_fragment":
+                self.mode == 2
 
  
     def read_input_file(self, name):

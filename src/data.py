@@ -138,7 +138,16 @@ class Internal_Dataset_Constructor(_Dataset_Constructor):
         super().__init__(param)
 
 
+class Internal_Fragment_Dataset_Constructor(_Dataset_Constructor):
+    def __init__(self, param):
+        self.aa_trj = np.genfromtxt(param.dataset_dir + param.aa_trajectory, delimiter=',')
+        self.aa_trj = self.aa_trj.reshape(-1, param.AA_NUM_ATOMS, 3)
+        self.aa_trj = self.aa_trj[0:param.TOTAL_SAMPLES, :, :]
 
+        
+        self.cg_trj = md.load(param.dataset_dir + param.cg_trajectory, top=param.dataset_dir + param.cg_topology) 
+        self.cg_trj = self.cg_trj.xyz[0:param.TOTAL_SAMPLES]
+        super().__init__(param)
 
 #Generate forward mapping matrix
 #def forward_matrix(AA_NUM_ATOMS, CG_NUM_ATOMS, aa_trj, device):

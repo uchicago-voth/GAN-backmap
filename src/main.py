@@ -304,9 +304,11 @@ if c.mode == 0:
     #Save stuff
     trj2.xyz = samps.numpy()
     trj2.save_lammpstrj(c.output_dir + c.output_traj_name)
-elif c.mode == 1:
+elif c.mode == 1 or c.mode == 2:
     samps = samps.numpy().reshape(-1, 3)
     np.savetxt(c.output_dir + c.output_name + '.bad', samps, fmt= '%.6f', delimiter=',')
+    if c.mode == 2:
+        np.savetxt(c.output_dir + c.output_name + '.ca', coords, fmt = '%.6f', delimiter=',')
 trainer.save_models('end', c)
 
 #torch.save(netD, c.output_dir + c.output_D_name)
