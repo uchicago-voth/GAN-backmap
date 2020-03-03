@@ -54,6 +54,9 @@ if c.mode == 0:
     dset = data.Cartesian_Dataset_Constructor(c)
 elif c.mode == 1:
     dset = data.Internal_Dataset_Constructor(c)
+elif c.mode == 2:
+    dset = data.Internal_Fragment_Dataset_Constructor(c)
+
 
 c.AA_NUM_ATOMS = dset.AA_NUM_ATOMS
 c.CG_NUM_ATOMS = dset.CG_NUM_ATOMS
@@ -118,7 +121,7 @@ if c.mode == 0:
     trainer = train.Distance_Trainer(b_gen, b_dis, optimizerD, optimizerG, G_f, aa_data_loader, cg_data_loader, c)    
 
 
-elif c.mode == 1:
+elif c.mode == 1 or c.mode == 2:
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
