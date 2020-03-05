@@ -44,9 +44,6 @@ class _Trainer(ABC):
                 self.save_models(epoch, param)
         
 
-    @abstractmethod
-    def calc_cycle_loss():
-        pass
 
     @abstractmethod
     def step():
@@ -240,6 +237,63 @@ class Internal_Trainer(_Trainer):
 
 
 
+class Internal_Fragment_Trainer(_Trainer):
+    def __init__(self, backward_gen, backward_dis, optimizer_b_gen, optimizer_b_dis, aa_data_loader, cg_data_loader, param):
+        super().__init__(backward_gen, backward_dis, optimizer_b_gen, optimizer_b_dis, aa_data_loader, cg_data_loader, param)
+        self.errors = [0,0,0]
+
+
+    def step(self, aa_real, cg_real, label, b_size, G_TRAIN, errors, param):
+        errD = errors[0]
+        errG = errors[1]
+        gradient_penalty = errors[2]
+
+        self.b_dis.zero_grad()
+        output = self.b_dis(aa_real).view(-1)
+
+        errD_real = loss.wasserstein_loss(output, label)
+        errD_real.backward()
+        noise = torch.randn(b_size, self.Z_SIZE, device=param.device)
+        aa_fake = self.b_gen(noise, cg_real)
+        label.fill_(self.fake_label)
+        output = self.b_dis(aa_fake.detach()).view(-1)
+
+        errD_fake = loss.wasserstein_loss(output, label)
+        errD_fake.backward()
+
+
+        gradient_penalty = loss.calc_gradient_penalty(self.b_dis, aa_real, aa_fake, cg_real, param.AA_NUM_ATOMS, param)
+
+        gradient_penalty.backward()
+        errD = errD_fake + errD_real
+        
+        self.optimizer_b_dis.step()
+        if G_TRAIN == 0:
+
+            self.b_gen.zero_grad()
+            label.fill_(self.real_label)
+            output = self.b_dis(aa_fake)
+            errG = loss.wasserstein_loss(output, label)
+            errG.backward()
+
+            self.optimizer_b_gen.step()
+        
+        return [errD, errG, gradient_penalty]
+    
+
+
+    def print_stats(self, errors, epoch, NUM_EPOCHS, step, loss_file):
+        errD = errors[0]
+        errG = errors[1]
+        gradient_penalty = errors[2]
+        loss_file.write('[%d/%d][%d/%d]\tLoss_D: %.8f\tLoss_G: %.8f\tGradient penalty: %.8f\n'
+            % (epoch, NUM_EPOCHS, step, len(self.aa_data_loader), errD.item(), errG.item(), gradient_penalty))
+        loss_file.flush()
+
+    def save_models(self, epoch, param):
+        print('saving model to ' + param.output_dir + ' at Epoch ' + str(epoch))
+        torch.save(self.b_dis, param.output_dir + param.output_D_name)
+        torch.save(self.b_gen, param.output_dir + param.output_G_name)
 
 
 

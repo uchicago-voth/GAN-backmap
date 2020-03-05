@@ -97,8 +97,8 @@ if c.mode == 0:
         #load previous model
         print("loading model " + sys.argv[2])
         input_model_name = sys.argv[2]
-        b_gen = torch.load("wgan_gp_outputs/" + input_model_name + '/' + input_model_name + '_G.pth')
-        b_dis = torch.load("wgan_gp_outputs/" + input_model_name + '/' + input_model_name + '_D.pth')
+        b_gen = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
     else:
         #Generate new models
         #GENERATOR
@@ -126,10 +126,10 @@ elif c.mode == 1 or c.mode == 2:
         #load previous model
         print("loading model " + sys.argv[2])
         input_model_name = sys.argv[2]
-        b_gen = torch.load("wgan_gp_outputs/" + input_model_name + '/' + input_model_name + '_G.pth')
-        b_dis = torch.load("wgan_gp_outputs/" + input_model_name + '/' + input_model_name + '_D.pth')
-        f_gen = torch.load("wgan_gp_outputs/" + input_model_name + '/' + 'forward_' + input_model_name + '_G.pth')
-        f_dis = torch.load("wgan_gp_outputs/" + input_model_name + '/' + 'forward_' + input_model_name + '_D.pth')
+        b_gen = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        f_gen = torch.load(c.output_base + input_model_name + '/' + 'forward_' + input_model_name + '_G.pth')
+        f_dis = torch.load(c.output_base + input_model_name + '/' + 'forward_' + input_model_name + '_D.pth')
     else:
         #Generate new models
         #GENERATORS
@@ -164,6 +164,35 @@ elif c.mode == 1 or c.mode == 2:
     print(f_gen)
 
     trainer = train.Internal_Trainer(b_gen, b_dis, optimizer_b_gen, optimizer_b_dis, f_gen, f_dis, optimizer_f_gen, optimizer_f_dis, aa_data_loader, cg_data_loader, c)    
+
+elif c.mode == 2:
+    if prev_model_flag:
+        #load previous model
+        print("loading model " + sys.argv[2])
+        input_model_name = sys.argv[2]
+        b_gen = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+    else:
+        #Generate new models
+        #GENERATOR
+        b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
+        b_gen.apply(init.weights_init_G)
+    
+        #DISCRIMINATOR
+        b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
+        b_dis.apply(init.weights_init_D)
+    
+    
+    optimizerD = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
+    
+    optimizerG = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
+    
+    #Print models
+    print(b_gen)
+    print(b_dis)
+
+    trainer = train.Internal_Fragment_Trainer(b_gen, b_dis, optimizerD, optimizerG, aa_data_loader, cg_data_loader, c)    
+
 ########################
 #####train networks#####
 ########################
@@ -179,106 +208,6 @@ trainer.train(loss_file, c)
 
 
 
-
-##labels
-#real_label=1
-#fake_label=-1
-#norm_loss = nn.L1Loss()
-#
-#if c.NORM == 2:
-#    norm_loss = nn.MSELoss()
-#
-#G_losses = []
-#D_losses = []
-#
-#iters = 0
-#
-#print("Starting Training")
-#for epoch in range(c.NUM_EPOCHS):
-#    print("epoch: " + str(epoch))
-#    for i, samples in enumerate(zip(cg_data_loader, aa_data_loader), 0):
-#        
-#        #Get Data
-#        cg_real = samples[0][0].float().to(c.device).view(c.BATCH_SIZE, c.CG_NUM_ATOMS, c.NUM_DIMS)
-#        aa_real = samples[1][0].float().to(c.device).view(c.BATCH_SIZE, c.AA_NUM_ATOMS, c.NUM_DIMS)
-#        b_size = aa_real.size(0)
-#        label = torch.full((b_size,), real_label, device=c.device)
-#        
-#
-#        netD.zero_grad()
-#        #Train with real
-#        #forward thru Disc
-#        output = netD(aa_real).view(-1)
-#        #calc loss
-#        errD_real =  loss.wasserstein_loss(output, label)
-#        #calc gradients
-#        errD_real.backward()
-#        D_x = output.mean().item()
-#        
-#
-#        #Train with all fake
-#        noise = torch.randn(b_size, c.Z_SIZE, device=c.device)
-#        aa_fake = netG(noise, cg_real)
-#        label.fill_(fake_label)
-#        #Forward
-#        output = netD(aa_fake.detach()).view(-1)
-#        #loss
-#        errD_fake = loss.wasserstein_loss(output, label)
-#        #gradients
-#        errD_fake.backward()
-#        D_G_z1 = output.mean().item()
-#        
-#
-#        #Add real and fake gradients
-#        gradient_penalty = loss.calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, c)
-#        gradient_penalty.backward()
-#        errD = errD_real + errD_fake
-#        
-#        #update D
-#        optimizerD.step()
-#
-#
-#        #Train G less
-#        if iters % c.D_TRAIN_RATE == 0:
-#
-#            #Update G
-#            netG.zero_grad()
-#            label.fill_(real_label)
-#            #Run fake batch through D
-#            output = netD(aa_fake).view(-1)
-#            #loss
-#            errG = loss.wasserstein_loss(output, label)
-#            
-#            err_cycle = loss.forward_cycle_loss(G_f, netG, aa_real, noise, c.CYCLE_LAMBDA) + loss.backward_cycle_loss(G_f, netG, cg_real, noise, c.CYCLE_LAMBDA)
-#            errG_cycle = errG + err_cycle
-#            #gradients
-#            errG_cycle.backward()
-#            D_G_z2 = output.mean().item()
-#
-#
-#            #update G
-#            optimizerG.step()
-#            
-#
-#        iters += 1
-#
-#
-#        #print stats
-#        out_frequency = int(len(aa_data_loader)/5)
-#        if (i % out_frequency == 0):
-#
-#            loss_file.write('[%d/%d][%d/%d]\tLoss_D: %.8f\tLoss_G: %.8f\tCycle_loss: %.8f\tD(x): %.8f\tD(G(z)): %.8f / %.8f\n'
-#              % (epoch, c.NUM_EPOCHS, i, len(aa_data_loader), errD.item(), errG.item(), err_cycle, D_x, D_G_z1, D_G_z2))
-#            loss_file.flush()
-#
-#        if (i == 0):
-#            G_losses.append(errG.item())
-#            D_losses.append(errD.item())
-#    
-#    if (epoch % c.model_output_freq == 0):
-#        print('Saving model to ' + c.output_dir + ' at Epoch ' + str(epoch))
-#        torch.save(netD, c.output_dir + c.output_D_name)
-#        torch.save(netG, c.output_dir + c.output_G_name)
 
 
 

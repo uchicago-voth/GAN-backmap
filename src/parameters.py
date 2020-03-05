@@ -103,8 +103,8 @@ class config():
         self.aa_trajectory = 'AA.lammpstrj'
         self.cg_topology = 'CG.pdb'
         self.aa_topology = 'AA.pdb'
-        self.output_size = 100
-        self.output_base = 'wgan_gp_outputs/'
+        self.output_size = 1000
+        self.output_base = 'outputs/'
         self.output_name = sys.argv[1]
         self.output_dir = self.output_base + self.output_name + '/'
         self.output_traj_name = self.output_name + '.lammpstrj'
