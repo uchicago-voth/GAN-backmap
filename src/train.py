@@ -24,6 +24,7 @@ class _Trainer(ABC):
 
     
     def train(self, loss_file, param):
+        out_frequency = int(len(self.aa_data_loader)/5) 
         errors = self.errors
         iters = 0
         for epoch in range(param.NUM_EPOCHS):
@@ -37,7 +38,6 @@ class _Trainer(ABC):
                 G_TRAIN = iters % param.D_TRAIN_RATE
                 errors = self.step(aa_real, cg_real, label, b_size, G_TRAIN, errors, param)
                 iters += 1
-                out_frequency = int(len(self.aa_data_loader)/5)
                 if i % out_frequency == 0:
                     self.print_stats(errors, epoch, param.NUM_EPOCHS, i, loss_file)
             if epoch % param.model_output_freq == 0:

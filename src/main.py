@@ -48,7 +48,7 @@ loss_file = open(c.output_dir + c.output_name + ".losses", "w")
 #####Create dataset#####
 ########################
 
-
+print(c.mode)
 print("Constructing Dataset")
 if c.mode == 0:
     dset = data.Cartesian_Dataset_Constructor(c)
@@ -121,7 +121,7 @@ if c.mode == 0:
     trainer = train.Distance_Trainer(b_gen, b_dis, optimizerD, optimizerG, G_f, aa_data_loader, cg_data_loader, c)    
 
 
-elif c.mode == 1 or c.mode == 2:
+elif c.mode == 1:
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
@@ -240,7 +240,9 @@ elif c.mode == 1 or c.mode == 2:
     samps = samps.numpy().reshape(-1, 3)
     np.savetxt(c.output_dir + c.output_name + '.bad', samps, fmt= '%.6f', delimiter=',')
     if c.mode == 2:
-        np.savetxt(c.output_dir + c.output_name + '.ca', coords, fmt = '%.6f', delimiter=',')
+        trj2 = md.load(c.dataset_dir + c.cg_trajectory, top=c.dataset_dir + c.cg_topology).atom_slice(range(c.CG_NUM_ATOMS), inplace=True)[0:c.output_size]
+        trj2.xyz = coords
+        trj2.save_lammpstrj(c.output_dir + c.output_name + "_ca.lammpstrj")
 trainer.save_models('end', c)
 
 #torch.save(netD, c.output_dir + c.output_D_name)
