@@ -24,7 +24,9 @@ def calc_gradient_penalty(netD, aa_real, aa_fake, cg_real, NUM_ATOMS, param):
 
 
     gradients = gradients.view(gradients.size(0), -1)
-    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * param.GP_LAMBDA
+    gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
+    gradient_penalty = ((gradients_norm - 1) ** 2).mean() * param.GP_LAMBDA
+    #gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * param.GP_LAMBDA
     return gradient_penalty
 
 
