@@ -58,11 +58,9 @@ elif c.mode == 2:
     dset = data.Internal_Fragment_Dataset_Constructor(c)
 
 
-c.AA_NUM_ATOMS = dset.AA_NUM_ATOMS
-c.CG_NUM_ATOMS = dset.CG_NUM_ATOMS
 
-aa_data_loader = dset.construct_data_loader(dset.aa_trj, dset.AA_NUM_ATOMS)
-cg_data_loader = dset.construct_data_loader(dset.cg_trj, dset.CG_NUM_ATOMS)
+aa_data_loader = dset.construct_data_loader(dset.aa_trj, dset.AA_NUM_ATOMS, dset.aa_minmax)
+cg_data_loader = dset.construct_data_loader(dset.cg_trj, dset.CG_NUM_ATOMS, dset.cg_minmax)
 
 
 if c.mode == 0:
@@ -174,24 +172,33 @@ elif c.mode == 2:
         b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
     else:
         #Generate new models
-        #GENERATOR
+        #GENERATORS
         b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
         b_gen.apply(init.weights_init_G)
+        
+        
     
         #DISCRIMINATOR
         b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
         b_dis.apply(init.weights_init_D)
+
+
     
     
-    optimizerD = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
+    optimizer_b_gen = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
+   
+    optimizer_b_dis = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
     
-    optimizerG = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
     
     #Print models
-    print(b_gen)
     print(b_dis)
+    print(b_gen)
 
-    trainer = train.Internal_Fragment_Trainer(b_gen, b_dis, optimizerD, optimizerG, aa_data_loader, cg_data_loader, c)    
+
+
+    trainer = train.Internal_Fragment_Trainer(b_gen, b_dis, optimizer_b_gen, optimizer_b_dis, aa_data_loader, cg_data_loader, c)    
+
+
 
 ########################
 #####train networks#####
@@ -203,14 +210,6 @@ trainer.train(loss_file, c)
 
 
 
-
-
-
-
-
-
-
-
 ######################
 #####save stuff#######
 ######################
@@ -219,13 +218,13 @@ trainer.train(loss_file, c)
 
 #generate LAMMPS trajectory file from generated samples for analysis
 coords = dset.cg_trj[0:c.output_size]
-normed_coords = dset.norm(coords)
+normed_coords = dset.norm(coords, dset.aa_minmax)
 cg_samples = torch.from_numpy(normed_coords).float()
 verification_set = cg_samples[0:c.output_size,:,:].to(c.device)
 big_noise = torch.randn(c.output_size, c.Z_SIZE, device=c.device)
 #verification_data = torch.cat((big_noise, verification_set), dim=1)
 samps = b_gen(big_noise, verification_set).to(c.device).detach()
-samps = dset.unnorm(samps.cpu())
+samps = dset.unnorm(samps.cpu(), dset.aa_minmax)
 
 
 if c.mode == 0:
@@ -244,16 +243,4 @@ elif c.mode == 1 or c.mode == 2:
         trj2.xyz = coords
         trj2.save_lammpstrj(c.output_dir + c.output_name + "_ca.lammpstrj")
 trainer.save_models('end', c)
-
-#torch.save(netD, c.output_dir + c.output_D_name)
-#torch.save(netG, c.output_dir + c.output_G_name)
-
-#losses = open(output_dir + output_loss_name, "w")
-#G_loss_array = np.asarray(G_losses)
-#D_loss_array = np.asarray(D_losses)
-#loss_array = np.swapaxes(np.vstack((G_loss_array, D_loss_array)), 0, 1)
-#np.savetxt(c.output_dir+c.output_loss_name, loss_array, delimiter=' ')
-
-
-
 

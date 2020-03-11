@@ -170,6 +170,8 @@ class Internal_Trainer(_Trainer):
         err_b_dis_fake.backward()
         err_f_dis_fake.backward()
 
+        
+
         b_gradient_penalty = loss.calc_gradient_penalty(self.b_dis, aa_real, aa_fake, cg_real, param.AA_NUM_ATOMS, param)
         f_gradient_penalty = loss.calc_gradient_penalty(self.f_dis, cg_real, cg_fake, aa_real, param.CG_NUM_ATOMS, param)
 
@@ -202,6 +204,7 @@ class Internal_Trainer(_Trainer):
             err_cycle = self.calc_cycle_loss(self.f_gen, self.b_gen, aa_real, cg_real, noise, param.CYCLE_LAMBDA)
             err_cycle.backward()
             
+
             self.optimizer_b_gen.step()
             self.optimizer_f_gen.step()
 
@@ -244,42 +247,58 @@ class Internal_Fragment_Trainer(_Trainer):
 
 
     def step(self, aa_real, cg_real, label, b_size, G_TRAIN, errors, param):
-        errD = errors[0]
-        errG = errors[1]
-        gradient_penalty = errors[2]
+        err_b_dis = errors[0]
+        err_b_gen = errors[1]
+        b_gradient_penalty = errors[2]
+
 
         self.b_dis.zero_grad()
-        output = self.b_dis(aa_real).view(-1)
 
-        errD_real = loss.wasserstein_loss(output, label)
-        errD_real.backward()
+        aa_output = self.b_dis(aa_real).view(-1)
+
+        err_b_dis_real = loss.wasserstein_loss(aa_output, label)
+
+        err_b_dis_real.backward()
+
         noise = torch.randn(b_size, self.Z_SIZE, device=param.device)
+
         aa_fake = self.b_gen(noise, cg_real)
+
         label.fill_(self.fake_label)
-        output = self.b_dis(aa_fake.detach()).view(-1)
 
-        errD_fake = loss.wasserstein_loss(output, label)
-        errD_fake.backward()
+        aa_output = self.b_dis(aa_fake.detach()).view(-1)
 
+        err_b_dis_fake = loss.wasserstein_loss(aa_output, label)
 
-        gradient_penalty = loss.calc_gradient_penalty(self.b_dis, aa_real, aa_fake, cg_real, param.AA_NUM_ATOMS, param)
+        err_b_dis_fake.backward()
 
-        gradient_penalty.backward()
-        errD = errD_fake + errD_real
         
+
+        b_gradient_penalty = loss.calc_gradient_penalty(self.b_dis, aa_real, aa_fake, cg_real, param.AA_NUM_ATOMS, param)
+
+        b_gradient_penalty.backward()
+
+        err_b_dis = err_b_dis_fake + err_b_dis_real
+
         self.optimizer_b_dis.step()
+
+
         if G_TRAIN == 0:
 
             self.b_gen.zero_grad()
+        
             label.fill_(self.real_label)
-            output = self.b_dis(aa_fake)
-            errG = loss.wasserstein_loss(output, label)
-            errG.backward()
+
+            aa_output = self.b_dis(aa_fake)
+  
+            err_b_gen = loss.wasserstein_loss(aa_output, label)
+
+            err_b_gen.backward()
+            
 
             self.optimizer_b_gen.step()
-        
-        return [errD, errG, gradient_penalty]
-    
+
+        return [err_b_dis, err_b_gen, b_gradient_penalty]
 
 
     def print_stats(self, errors, epoch, NUM_EPOCHS, step, loss_file):
