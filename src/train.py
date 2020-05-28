@@ -120,8 +120,13 @@ class Distance_Trainer(_Trainer):
 
     def save_models(self, epoch, param):
         print('saving model to ' + param.output_dir + ' at Epoch ' + str(epoch))
-        torch.save(self.b_dis, param.output_dir + param.output_D_name)
-        torch.save(self.b_gen, param.output_dir + param.output_G_name)
+        print(self.optimizer_b_gen.state_dict())
+        b_dis_checkpoint = {'epoch': epoch+1, 'state_dict': self.b_dis.state_dict(), 'optim_state_dict': self.optimizer_b_dis.state_dict()}
+        b_gen_checkpoint = {'epoch': epoch+1, 'state_dict': self.b_gen.state_dict(), 'optim_state_dict': self.optimizer_b_gen.state_dict()}
+        torch.save(b_dis_checkpoint, param.output_dir + param.output_D_name)
+        torch.save(b_gen_checkpoint, param.output_dir + param.output_G_name)
+
+
 
 class Internal_Trainer(_Trainer):
     def __init__(self, backward_gen, backward_dis, optimizer_b_gen, optimizer_b_dis, forward_gen, forward_dis, optimizer_f_gen, optimizer_f_dis, aa_data_loader, cg_data_loader, param):
@@ -231,10 +236,16 @@ class Internal_Trainer(_Trainer):
 
     def save_models(self, epoch, param):
         print('saving model to ' + param.output_dir + ' at Epoch ' + str(epoch))
-        torch.save(self.b_dis, param.output_dir + param.output_D_name)
-        torch.save(self.b_gen, param.output_dir + param.output_G_name)
-        torch.save(self.f_dis, param.output_dir + 'forward_' +  param.output_D_name)
-        torch.save(self.f_gen, param.output_dir + 'forward_' +  param.output_G_name)
+
+
+        b_dis_checkpoint = {'epoch': epoch+1, 'state_dict': self.b_dis.state_dict(), 'optim_state_dict': self.optimizer_b_dis.state_dict()}
+        b_gen_checkpoint = {'epoch': epoch+1, 'state_dict': self.b_gen.state_dict(), 'optim_state_dict': self.optimizer_b_gen.state_dict()}
+        f_dis_checkpoint = {'epoch': epoch+1, 'state_dict': self.f_dis.state_dict(), 'optim_state_dict': self.optimizer_f_dis.state_dict()}
+        f_gen_checkpoint = {'epoch': epoch+1, 'state_dict': self.f_gen.state_dict(), 'optim_state_dict': self.optimizer_f_gen.state_dict()}
+        torch.save(b_dis_checkpoint, param.output_dir + param.output_D_name)
+        torch.save(b_gen_checkpoint, param.output_dir + param.output_G_name)
+        torch.save(f_dis_checkpoint, param.output_dir + 'forward' + param.output_D_name)
+        torch.save(f_gen_checkpoint, param.output_dir + 'forward' + param.output_G_name)
  
 
 
@@ -311,8 +322,10 @@ class Internal_Fragment_Trainer(_Trainer):
 
     def save_models(self, epoch, param):
         print('saving model to ' + param.output_dir + ' at Epoch ' + str(epoch))
-        torch.save(self.b_dis, param.output_dir + param.output_D_name)
-        torch.save(self.b_gen, param.output_dir + param.output_G_name)
+        b_dis_checkpoint = {'epoch': epoch+1, 'state_dict': self.b_dis.state_dict(), 'optim_state_dict': self.optimizer_b_dis.state_dict()}
+        b_gen_checkpoint = {'epoch': epoch+1, 'state_dict': self.b_gen.state_dict(), 'optim_state_dict': self.optimizer_b_gen.state_dict()}
+        torch.save(b_dis_checkpoint, param.output_dir + param.output_D_name)
+        torch.save(b_gen_checkpoint, param.output_dir + param.output_G_name)
 
 
 

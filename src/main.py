@@ -50,7 +50,7 @@ loss_file = open(c.output_dir + c.output_name + ".losses", "w")
 
 print(c.mode)
 print("Constructing Dataset")
-if c.mode == 0:
+if c.mode == 0 or c.mode == 3:
     dset = data.Cartesian_Dataset_Constructor(c)
 elif c.mode == 1:
     dset = data.Internal_Dataset_Constructor(c)
@@ -58,12 +58,11 @@ elif c.mode == 2:
     dset = data.Internal_Fragment_Dataset_Constructor(c)
 
 
-
 aa_data_loader = dset.construct_data_loader(dset.aa_trj, dset.AA_NUM_ATOMS, dset.aa_minmax)
 cg_data_loader = dset.construct_data_loader(dset.cg_trj, dset.CG_NUM_ATOMS, dset.cg_minmax)
 
 
-if c.mode == 0:
+if c.mode == 0 or c.mode == 3:
     atom_counts = []
     if (os.path.exists(sys.argv[1] + ".cg")):
         print("Atomistic-CG correspondance file located. Generating neighbor list and forward mapping operator based on file.")
@@ -91,67 +90,88 @@ if len(sys.argv) >= 3:
     prev_model_flag = True
 
 if c.mode == 0:
+    #Create models and optimizers
+    b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
+    b_dis = networks.Distance_Discriminator(dist_size, atom_counts, c).to(c.device)    
+    optimizerG = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
+    optimizerD = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
+
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
         input_model_name = sys.argv[2]
-        b_gen = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
-        b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        b_gen_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        b_gen.load_state_dict(b_gen_checkpoint['state_dict'])
+        b_dis.load_state_dict(b_dis_checkpoint['state_dict'])
+        optimizerG.load_state_dict(b_gen_checkpoint['optim_state_dict'])
+        optimizerD.load_state_dict(b_dis_checkpoint['optim_state_dict'])
+
     else:
-        #Generate new models
-        #GENERATOR
-        b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
+        #Initialize weights
+       
         b_gen.apply(init.weights_init_G)
-    
-        #DISCRIMINATOR
-        b_dis = networks.Distance_Discriminator(dist_size, atom_counts, c).to(c.device)
         b_dis.apply(init.weights_init_D)
     
     
-    optimizerD = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
-    
-    optimizerG = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
     
     #Print models
     print(b_gen)
     print(b_dis)
 
-    trainer = train.Distance_Trainer(b_gen, b_dis, optimizerD, optimizerG, G_f, aa_data_loader, cg_data_loader, c)    
+    trainer = train.Distance_Trainer(b_gen, b_dis, optimizerG, optimizerD, G_f, aa_data_loader, cg_data_loader, c)    
 
 
 elif c.mode == 1:
+
+    b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
+    f_gen = networks.Generator(c.AA_NUM_ATOMS, c.CG_NUM_ATOMS, c).to(c.device)
+    b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
+    f_dis = networks.Internal_Discriminator(c.CG_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
+
+    optimizer_b_gen = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE) 
+    optimizer_b_dis = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
+    optimizer_f_gen = optim.RMSprop(f_gen.parameters(), lr=c.GLEARNING_RATE)
+    optimizer_f_dis = optim.RMSprop(f_dis.parameters(), lr=c.DLEARNING_RATE)
+    
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
         input_model_name = sys.argv[2]
-        b_gen = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
-        b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
-        f_gen = torch.load(c.output_base + input_model_name + '/' + 'forward_' + input_model_name + '_G.pth')
-        f_dis = torch.load(c.output_base + input_model_name + '/' + 'forward_' + input_model_name + '_D.pth')
+        b_gen_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        f_gen_checkpoint = torch.load(c.output_base + input_model_name + '/' + "forward_" + input_model_name + '_G.pth')
+        f_dis_checkpoint = torch.load(c.output_base + input_model_name + '/' + "forward_" + input_model_name + '_D.pth')
+        
+        
+        b_gen.load_state_dict(b_gen_checkpoint['state_dict'])
+        b_dis.load_state_dict(b_dis_checkpoint['state_dict'])
+        f_gen.load_state_dict(f_gen_checkpoint['state_dict'])
+        f_dis.load_state_dict(f_dis_checkpoint['state_dict'])
+        
+        
+        optimizer_b_gen.load_state_dict(b_gen_checkpoint['optim_state_dict'])
+        optimizer_b_dis.load_state_dict(b_dis_checkpoint['optim_state_dict'])
+        optimizer_f_gen.load_state_dict(f_gen_checkpoint['optim_state_dict'])
+        optimizer_f_dis.load_state_dict(f_dis_checkpoint['optim_state_dict'])
+        
+        
+        
     else:
         #Generate new models
         #GENERATORS
-        b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
         b_gen.apply(init.weights_init_G)
         
         
-        f_gen = networks.Generator(c.AA_NUM_ATOMS, c.CG_NUM_ATOMS, c).to(c.device)
         f_gen.apply(init.weights_init_G)
     
         #DISCRIMINATOR
-        b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
         b_dis.apply(init.weights_init_D)
 
 
-        f_dis = networks.Internal_Discriminator(c.CG_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
         f_dis.apply(init.weights_init_D)
     
     
-    optimizer_b_gen = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
-    optimizer_f_gen = optim.RMSprop(f_gen.parameters(), lr=c.GLEARNING_RATE)
-   
-    optimizer_b_dis = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
-    optimizer_f_dis = optim.RMSprop(f_dis.parameters(), lr=c.DLEARNING_RATE)
     
     
     #Print models
@@ -164,30 +184,39 @@ elif c.mode == 1:
     trainer = train.Internal_Trainer(b_gen, b_dis, optimizer_b_gen, optimizer_b_dis, f_gen, f_dis, optimizer_f_gen, optimizer_f_dis, aa_data_loader, cg_data_loader, c)    
 
 elif c.mode == 2:
+    b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
+    b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
+
+    optimizer_b_gen = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
+   
+    optimizer_b_dis = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
     if prev_model_flag:
         #load previous model
         print("loading model " + sys.argv[2])
         input_model_name = sys.argv[2]
-        b_gen = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
-        b_dis = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        b_gen_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        
+        
+        b_gen.load_state_dict(b_gen_checkpoint['state_dict'])
+        b_dis.load_state_dict(b_dis_checkpoint['state_dict'])
+        
+        
+        optimizer_b_gen.load_state_dict(b_gen_checkpoint['optim_state_dict'])
+        optimizer_b_dis.load_state_dict(b_dis_checkpoint['optim_state_dict'])
     else:
         #Generate new models
         #GENERATORS
-        b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
         b_gen.apply(init.weights_init_G)
         
         
     
         #DISCRIMINATOR
-        b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)
         b_dis.apply(init.weights_init_D)
 
 
     
     
-    optimizer_b_gen = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
-   
-    optimizer_b_dis = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
     
     
     #Print models
@@ -200,6 +229,41 @@ elif c.mode == 2:
 
 
 
+if c.mode == 3:
+    #Create models and optimizers
+    b_gen = networks.Generator(c.CG_NUM_ATOMS, c.AA_NUM_ATOMS, c).to(c.device)
+    b_dis = networks.Internal_Discriminator(c.AA_NUM_ATOMS * c.NUM_DIMS, c).to(c.device)    
+    
+    
+    optimizerD = optim.RMSprop(b_dis.parameters(), lr=c.DLEARNING_RATE)
+    optimizerG = optim.RMSprop(b_gen.parameters(), lr=c.GLEARNING_RATE)
+    if prev_model_flag:
+        #load previous model
+        print("loading model " + sys.argv[2])
+        input_model_name = sys.argv[2]
+        b_gen_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
+        b_dis_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
+        b_gen.load_state_dict(b_gen_checkpoint['state_dict'])
+        b_dis.load_state_dict(b_dis_checkpoint['state_dict']) 
+        optimizerG.load_state_dict(b_gen_checkpoint['optim_state_dict'])
+        optimizerD.load_state_dict(b_dis_checkpoint['optim_state_dict'])
+
+    else:
+        #Initialize weights
+        
+        b_gen.apply(init.weights_init_G)
+        b_dis.apply(init.weights_init_D)
+    
+    
+    
+    #Print models
+    print(b_gen)
+    print(b_dis)
+
+    trainer = train.Distance_Trainer(b_gen, b_dis, optimizerG, optimizerD, G_f, aa_data_loader, cg_data_loader, c)    
+
+
+
 ########################
 #####train networks#####
 ########################
@@ -209,7 +273,7 @@ print("Beginning Training")
 trainer.train(loss_file, c)
 
 
-
+trainer.save_models(c.NUM_EPOCHS, c)
 ######################
 #####save stuff#######
 ######################
@@ -218,7 +282,7 @@ trainer.train(loss_file, c)
 
 #generate LAMMPS trajectory file from generated samples for analysis
 coords = dset.cg_trj[0:c.output_size]
-normed_coords = dset.norm(coords, dset.aa_minmax)
+normed_coords = dset.norm(coords, dset.cg_minmax)
 cg_samples = torch.from_numpy(normed_coords).float()
 verification_set = cg_samples[0:c.output_size,:,:].to(c.device)
 big_noise = torch.randn(c.output_size, c.Z_SIZE, device=c.device)
@@ -227,7 +291,7 @@ samps = b_gen(big_noise, verification_set).to(c.device).detach()
 samps = dset.unnorm(samps.cpu(), dset.aa_minmax)
 
 
-if c.mode == 0:
+if c.mode == 0 or c.mode == 3:
     trj2 = md.load(c.dataset_dir + c.aa_trajectory, top = c.dataset_dir + c.aa_topology).atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size] 
     
     #trj2 = dset.aa_trj.atom_slice(range(c.AA_NUM_ATOMS), inplace=True)[0:c.output_size]
@@ -240,7 +304,6 @@ elif c.mode == 1 or c.mode == 2:
     np.savetxt(c.output_dir + c.output_name + '.bad', samps, fmt= '%.6f', delimiter=',')
     if c.mode == 2:
         trj2 = md.load(c.dataset_dir + c.cg_trajectory, top=c.dataset_dir + c.cg_topology).atom_slice(range(c.CG_NUM_ATOMS), inplace=True)[0:c.output_size]
-        trj2.xyz = coords
-        trj2.save_lammpstrj(c.output_dir + c.output_name + "_ca.lammpstrj")
-trainer.save_models('end', c)
+        trj2.xyz = dset.cg_trj[0:c.output_size]
+        trj2.save_pdb(c.output_dir + c.output_name + "_ca.pdb")
 

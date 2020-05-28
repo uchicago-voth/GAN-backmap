@@ -34,20 +34,22 @@ class _Dataset_Constructor(ABC):
 
 
     def norm(self, array, minmax):
-        array[:,:,0] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,0], minmax[0,0]),np.subtract(minmax[1,0], minmax[0,0])), 0.5),2.0)
-        array[:,:,1] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,1], minmax[0,1]),np.subtract(minmax[1,1], minmax[0,1])), 0.5),2.0)
-        array[:,:,2] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,2], minmax[0,2]),np.subtract(minmax[1,2], minmax[0,2])), 0.5),2.0)
-        return array
+        array2 = array
+        array2[:,:,0] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,0], minmax[0,0]),np.subtract(minmax[1,0], minmax[0,0])), 0.5),2.0)
+        array2[:,:,1] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,1], minmax[0,1]),np.subtract(minmax[1,1], minmax[0,1])), 0.5),2.0)
+        array2[:,:,2] = np.multiply(np.subtract(np.divide(np.subtract(array[:,:,2], minmax[0,2]),np.subtract(minmax[1,2], minmax[0,2])), 0.5),2.0)
+        return array2
     
     def unnorm(self, array, minmax):
-        array[:,:,0] = np.add(np.multiply(array[:,:,0]/2+0.5, np.subtract(minmax[1,0], minmax[0,0])), minmax[0,0])
-        array[:,:,1] = np.add(np.multiply(array[:,:,1]/2+0.5, np.subtract(minmax[1,1], minmax[0,1])), minmax[0,1])
-        array[:,:,2] = np.add(np.multiply(array[:,:,2]/2+0.5, np.subtract(minmax[1,2], minmax[0,2])), minmax[0,2])
-        return array
+        array2 = array
+        array2[:,:,0] = np.add(np.multiply(array[:,:,0]/2+0.5, np.subtract(minmax[1,0], minmax[0,0])), minmax[0,0])
+        array2[:,:,1] = np.add(np.multiply(array[:,:,1]/2+0.5, np.subtract(minmax[1,1], minmax[0,1])), minmax[0,1])
+        array2[:,:,2] = np.add(np.multiply(array[:,:,2]/2+0.5, np.subtract(minmax[1,2], minmax[0,2])), minmax[0,2])
+        return array2
 
 
     def construct_data_loader(self, trj, NUM_ATOMS, minmax):
-        coordinates = trj
+        coordinates = trj.copy()
         #coordinates = trj.atom_slice(range(NUM_ATOMS), inplace=True).xyz[0:self.TOTAL_SAMPLES]
         data_normalized = self.norm(coordinates, minmax)
         samples = torch.from_numpy(data_normalized)
@@ -62,7 +64,6 @@ class _Dataset_Constructor(ABC):
 #Cartesian dataset. Usable for direct cartesian coordinates, or distance matrices
 class Cartesian_Dataset_Constructor(_Dataset_Constructor):
     def __init__(self, param):
-        self.dataset_dir = param.dataset_dir
         self.aa_trj = md.load(param.dataset_dir + param.aa_trajectory, top=param.dataset_dir + param.aa_topology)
         self.cg_trj = md.load(param.dataset_dir + param.cg_trajectory, top=param.dataset_dir + param.cg_topology) 
         self.table, self.bonds = self.aa_trj.top.to_dataframe()

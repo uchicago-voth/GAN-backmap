@@ -122,11 +122,11 @@ def to_frag_xyz(name, num_frames, num_atoms):
     infile = name + '.bad'
     outfile = name + '_gen.xyz'
     topfile = name + '.zmat'
-    cafile = name + '_ca.lammpstrj'
-    catop = name + '_ca.pdb'
+    cafile = name + '_ca.pdb'
+    #catop = name + '_ca.pdb'
     fragfile = name + '.cg'
     resfile = name + '.res'
-    ca = md.load(cafile, top = catop).xyz
+    ca = md.load(cafile).xyz
     frag = np.genfromtxt(fragfile, delimiter = ' ').astype(int)
     resid = open(resfile, 'r').read().splitlines() 
     z_features = np.genfromtxt(infile, delimiter=',')
@@ -148,7 +148,7 @@ def to_frag_xyz(name, num_frames, num_atoms):
             z_mat.unsafe_iloc[:,6] = small_z_feat_frame[:,2]
             small_xyz_frame = z_mat.get_cartesian()
             coord = np.multiply(10.0, ca[i,j,:])
-            print(coord)
+            #print(coord)
             small_xyz_frame = small_xyz_frame + coord
             small_xyz_frame.to_xyz('temp.xyz')
             temp = open('temp.xyz', 'r')
@@ -213,7 +213,7 @@ def make_zmats(frame_file, frag, resid):
         small_frame.index = range(frag[j+1] - frag[j])
         small_frame = center_fragment(small_frame, j, resid)
         bonds = small_frame.get_bonds()
-        print(bonds)
+        #print(bonds)
         #print(small_frame)
         if j == 0 or resid[j] == 'PRO':
             c_frag = pd.DataFrame([['origin', 'e_z', 'e_x'], [4, 'e_z', 'e_x'], [4, 0, 'e_x']], columns=['b','a','d'], index = [4, 0, 6])
@@ -223,11 +223,11 @@ def make_zmats(frame_file, frag, resid):
 
         else:
             c_frag = pd.DataFrame([['origin', 'e_z', 'e_x'], [2, 'e_z', 'e_x'], [2, 0, 'e_x']], columns=['b','a','d'], index = [2, 0, 4])
-        print(small_frame)
+        #print(small_frame)
 
         zmat = small_frame.get_zmat(construction_table = small_frame.get_construction_table(fragment_list = [(small_frame, c_frag),]))
         construction_table.append(zmat)
-        print(construction_table[j])
+        #print(construction_table[j])
     #print(construction_table)
     return construction_table
 
