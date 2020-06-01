@@ -23,11 +23,11 @@ class _Trainer(ABC):
 
 
     
-    def train(self, loss_file, param):
+    def train(self, loss_file, current_epoch, param):
         out_frequency = int(len(self.aa_data_loader)/5) 
         errors = self.errors
         iters = 0
-        for epoch in range(param.NUM_EPOCHS):
+        for epoch in range(current_epoch, param.NUM_EPOCHS):
             print("epoch: " + str(epoch))
             for i, samples in enumerate(zip(self.cg_data_loader, self.aa_data_loader), 0):
                 cg_real = samples[0][0].float().to(param.device).view(param.BATCH_SIZE, param.CG_NUM_ATOMS, param.NUM_DIMS)

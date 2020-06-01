@@ -84,7 +84,7 @@ if c.mode == 0 or c.mode == 3:
 ##########################
 
 
-
+current_epoch = 1
 prev_model_flag = False
 if len(sys.argv) >= 3:
     prev_model_flag = True
@@ -106,6 +106,7 @@ if c.mode == 0:
         b_dis.load_state_dict(b_dis_checkpoint['state_dict'])
         optimizerG.load_state_dict(b_gen_checkpoint['optim_state_dict'])
         optimizerD.load_state_dict(b_dis_checkpoint['optim_state_dict'])
+        current_epoch = b_gen_checkpoint['epoch']
 
     else:
         #Initialize weights
@@ -154,6 +155,7 @@ elif c.mode == 1:
         optimizer_b_dis.load_state_dict(b_dis_checkpoint['optim_state_dict'])
         optimizer_f_gen.load_state_dict(f_gen_checkpoint['optim_state_dict'])
         optimizer_f_dis.load_state_dict(f_dis_checkpoint['optim_state_dict'])
+        current_epoch = b_gen_checkpoint['epoch']
         
         
         
@@ -197,13 +199,14 @@ elif c.mode == 2:
         b_gen_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_G.pth')
         b_dis_checkpoint = torch.load(c.output_base + input_model_name + '/' + input_model_name + '_D.pth')
         
-        
+         
         b_gen.load_state_dict(b_gen_checkpoint['state_dict'])
         b_dis.load_state_dict(b_dis_checkpoint['state_dict'])
         
         
         optimizer_b_gen.load_state_dict(b_gen_checkpoint['optim_state_dict'])
         optimizer_b_dis.load_state_dict(b_dis_checkpoint['optim_state_dict'])
+        current_epoch = b_gen_checkpoint['epoch']
     else:
         #Generate new models
         #GENERATORS
@@ -247,6 +250,7 @@ if c.mode == 3:
         b_dis.load_state_dict(b_dis_checkpoint['state_dict']) 
         optimizerG.load_state_dict(b_gen_checkpoint['optim_state_dict'])
         optimizerD.load_state_dict(b_dis_checkpoint['optim_state_dict'])
+        current_epoch = b_gen_checkpoint['epoch']
 
     else:
         #Initialize weights
@@ -270,7 +274,7 @@ if c.mode == 3:
 
 print("Beginning Training")
 
-trainer.train(loss_file, c)
+trainer.train(loss_file, current_epoch, c)
 
 
 trainer.save_models(c.NUM_EPOCHS, c)
